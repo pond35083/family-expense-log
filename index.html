@@ -32,6 +32,8 @@
 
     --true-c: #0F766E;
     --true-light: #CCFBF1;
+
+    --balance-dark: #0F172A;
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -43,7 +45,8 @@
     color: var(--ink);
   }
   .dashboard { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 0; padding: 0 16px; }
-  .app-flex { display: flex; flex-direction: column; gap: 52px; margin-top: 40px; }
+  .app-flex { display: flex; flex-direction: column; gap: 26px; margin-top: 40px; }
+  #overview { margin-top: 26px; }
 
   nav.topnav { position: sticky; top: 0; z-index: 30; background: var(--ink); padding: 0 16px; overflow-x: auto; white-space: nowrap; }
   nav.topnav .navwrap { max-width: 1040px; margin: 0 auto; display: flex; gap: 4px; }
@@ -65,7 +68,7 @@
   /* Filtered zone */
   .filtered-zone { background: #FAFAFF; border: 1px dashed #C7C3F0; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 22px; }
   .filtered-zone-label { font-size: 12px; font-weight: 600; color: #6D28D9; margin: 0 0 4px; }
-  .filter-bar { position: sticky; top: 52px; z-index: 10; display: flex; flex-wrap: wrap; gap: 20px; align-items: center; background: #FFFFFF; }
+  .filter-bar { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
   .filter-group { display: flex; flex-direction: column; gap: 4px; }
   .filter-group label { font-size: 11px; font-weight: 600; color: var(--sub); text-transform: uppercase; letter-spacing: 0.03em; }
   .filter-group select { font-family: inherit; font-size: 14px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: #FAFAFB; min-width: 140px; color: var(--ink); }
@@ -79,7 +82,7 @@
   input:checked + .slider::before { transform: translateX(20px); }
 
   /* Balance */
-  .balance-card { background: var(--total-dark); color: #fff; border-radius: 18px; padding: 24px 26px; display: flex; align-items: center; gap: 18px; }
+  .balance-card { background: var(--balance-dark); color: #fff; border-radius: 18px; padding: 24px 26px; display: flex; align-items: center; gap: 18px; }
   .balance-card .icon-wrap { width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .balance-card .icon-wrap svg { width: 22px; height: 22px; }
   .balance-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.8; }
@@ -137,7 +140,10 @@
   thead th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--sub); font-weight: 700; padding: 8px 10px; border-bottom: 2px solid var(--border); position: sticky; top: 0; background: var(--bg-card); }
   tbody td { padding: 9px 10px; border-bottom: 1px solid #EFEFF1; }
   tbody tr:hover { background: #FAFAFB; }
-  .table-scroll { max-height: 320px; overflow-y: auto; border-radius: 10px; }
+  .table-scroll { max-height: 320px; overflow-y: auto; overflow-x: auto; border-radius: 10px; }
+  .col-month { width: 100px; min-width: 100px; }
+  .col-date { width: 120px; min-width: 120px; }
+  #tblTelecom { min-width: 640px; }
   .num { text-align: right; font-variant-numeric: tabular-nums; }
   .link-cell a { color: var(--total); text-decoration: none; font-weight: 600; }
   .link-cell a:hover { text-decoration: underline; }
@@ -250,6 +256,7 @@ function buildDashboard(raw) {
         electricity, water, internet, mobile, trueCombined, total, familyTransfer, balance,
         eDate: r["E-Transfer Date"] || "", wDate: r["W-Transfer Date"] || "", iDate: r["I-Transfer Date"] || "",
         eUnit: r["E-Unit (kWh)"] || "", wUnit: r["W-Unit"] || "",
+        eUnitNum: toNumber(r["E-Unit (kWh)"]), wUnitNum: toNumber(r["W-Unit"]),
         url: (r["URL"] || "").trim(), remark: r["Remark"] || ""
       };
     })
@@ -263,6 +270,7 @@ function buildDashboard(raw) {
   const app = document.getElementById('app');
   app.className = 'app-flex';
   const latest = rows[rows.length - 1];
+  const balanceSum = rows.reduce((s, r) => s + (r.balance !== null ? r.balance : 0), 0);
 
   app.innerHTML = `
     <section id="balance">
@@ -270,8 +278,8 @@ function buildDashboard(raw) {
         <div class="icon-wrap">${icon('wallet')}</div>
         <div>
           <div class="balance-label">All-Time Balance</div>
-          <div class="balance-value">${latest.balance !== null ? fmt(latest.balance) + ' THB' : 'N/A'}</div>
-          <div class="balance-sub">As of ${latest.label} \u00b7 not affected by filters below</div>
+          <div class="balance-value">${fmt(balanceSum)} THB</div>
+          <div class="balance-sub">Sum of the Balance column across all recorded months \u00b7 not affected by filters below</div>
         </div>
       </div>
     </section>
@@ -506,11 +514,11 @@ function buildDashboard(raw) {
     if (barChart) barChart.destroy();
     barChart = new Chart(document.getElementById('barChart'), {
       type: 'bar',
-      data: { labels, datasets: barSeries.map(s => ({ label: s.label, data: slice.map(s.getVal), backgroundColor: s.color, borderColor: '#fff', borderWidth: 2 })) },
+      data: { labels, datasets: barSeries.map(s => ({ label: s.label, data: slice.map(s.getVal), backgroundColor: s.color })) },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11, weight: '600' }, color: '#111827' } },
+          legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 }, color: '#111827' } },
           tooltip: { backgroundColor: '#111827', padding: 10, callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.parsed.y) + ' THB' } }
         },
         scales: {
@@ -522,30 +530,46 @@ function buildDashboard(raw) {
 
     if (miniE) miniE.destroy();
     miniE = new Chart(document.getElementById('miniElectricity'), {
-      type: 'bar',
-      data: { labels, datasets: [{ label: 'Electricity', data: slice.map(r => r.electricity), backgroundColor: '#F59E0B' }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111827' } },
-        scales: { x: { ticks: { font: { size: 9 }, color: '#6B7280', maxRotation: 60, minRotation: 45 }, grid: { display: false } }, y: { ticks: { font: { size: 10 }, color: '#6B7280' }, grid: { color: '#EFEFF1' } } } }
+      type: 'line',
+      data: { labels, datasets: [
+        { label: 'Amount (THB)', data: slice.map(r => r.electricity), borderColor: '#F59E0B', backgroundColor: '#F59E0B', yAxisID: 'y', borderWidth: 1.5, pointRadius: 2, pointHoverRadius: 4, tension: 0.3 },
+        { label: 'Units (kWh)', data: slice.map(r => r.eUnitNum), borderColor: '#92400E', backgroundColor: '#92400E', yAxisID: 'y1', borderWidth: 1.5, borderDash: [4, 3], pointRadius: 2, pointHoverRadius: 4, tension: 0.3 }
+      ] },
+      options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 9 } } }, tooltip: { backgroundColor: '#111827' } },
+        scales: {
+          x: { ticks: { font: { size: 9 }, color: '#6B7280', maxRotation: 60, minRotation: 45 }, grid: { display: false } },
+          y: { position: 'left', ticks: { font: { size: 9 }, color: '#B45309' }, grid: { color: '#EFEFF1' }, title: { display: true, text: 'THB', font: { size: 9 } } },
+          y1: { position: 'right', ticks: { font: { size: 9 }, color: '#92400E' }, grid: { drawOnChartArea: false }, title: { display: true, text: 'kWh', font: { size: 9 } } }
+        } }
     });
 
     if (miniW) miniW.destroy();
     miniW = new Chart(document.getElementById('miniWater'), {
-      type: 'bar',
-      data: { labels, datasets: [{ label: 'Water', data: slice.map(r => r.water), backgroundColor: '#0072B2' }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111827' } },
-        scales: { x: { ticks: { font: { size: 9 }, color: '#6B7280', maxRotation: 60, minRotation: 45 }, grid: { display: false } }, y: { ticks: { font: { size: 10 }, color: '#6B7280' }, grid: { color: '#EFEFF1' } } } }
+      type: 'line',
+      data: { labels, datasets: [
+        { label: 'Amount (THB)', data: slice.map(r => r.water), borderColor: '#0072B2', backgroundColor: '#0072B2', yAxisID: 'y', borderWidth: 1.5, pointRadius: 2, pointHoverRadius: 4, tension: 0.3 },
+        { label: 'Units', data: slice.map(r => r.wUnitNum), borderColor: '#164E63', backgroundColor: '#164E63', yAxisID: 'y1', borderWidth: 1.5, borderDash: [4, 3], pointRadius: 2, pointHoverRadius: 4, tension: 0.3 }
+      ] },
+      options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 9 } } }, tooltip: { backgroundColor: '#111827' } },
+        scales: {
+          x: { ticks: { font: { size: 9 }, color: '#6B7280', maxRotation: 60, minRotation: 45 }, grid: { display: false } },
+          y: { position: 'left', ticks: { font: { size: 9 }, color: '#0072B2' }, grid: { color: '#EFEFF1' }, title: { display: true, text: 'THB', font: { size: 9 } } },
+          y1: { position: 'right', ticks: { font: { size: 9 }, color: '#164E63' }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Units', font: { size: 9 } } }
+        } }
     });
 
     if (miniT) miniT.destroy();
     miniT = new Chart(document.getElementById('miniTelecom'), {
-      type: 'bar',
+      type: 'line',
       data: { labels, datasets: [
-        { label: 'Internet', data: slice.map(r => r.internet), backgroundColor: '#009E73' },
-        { label: 'Mobile', data: slice.map(r => r.mobile), backgroundColor: '#CC79A7' }
+        { label: 'Internet', data: slice.map(r => r.internet), borderColor: '#009E73', backgroundColor: '#009E73', borderWidth: 1.5, pointRadius: 2, pointHoverRadius: 4, tension: 0.3 },
+        { label: 'Mobile', data: slice.map(r => r.mobile), borderColor: '#CC79A7', backgroundColor: '#CC79A7', borderWidth: 1.5, pointRadius: 2, pointHoverRadius: 4, tension: 0.3 }
       ] },
-      options: { responsive: true, maintainAspectRatio: false,
+      options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
         plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 9 } } }, tooltip: { backgroundColor: '#111827' } },
-        scales: { x: { stacked: true, ticks: { font: { size: 9 }, color: '#6B7280', maxRotation: 60, minRotation: 45 }, grid: { display: false } }, y: { stacked: true, ticks: { font: { size: 10 }, color: '#6B7280' }, grid: { color: '#EFEFF1' } } } }
+        scales: { x: { ticks: { font: { size: 9 }, color: '#6B7280', maxRotation: 60, minRotation: 45 }, grid: { display: false } }, y: { ticks: { font: { size: 9 }, color: '#6B7280' }, grid: { color: '#EFEFF1' }, title: { display: true, text: 'THB', font: { size: 9 } } } } }
     });
   }
 
@@ -558,14 +582,14 @@ function buildDashboard(raw) {
   function renderTables() {
     const slice = currentSlice().slice().reverse();
     document.getElementById('tblElectricity').innerHTML = `
-      <thead><tr><th>Month</th><th>Transfer date</th><th class="num">Units (kWh)</th><th class="num">Amount (THB)</th><th>Link</th></tr></thead>
-      <tbody>${slice.map(r => `<tr><td>${r.label}</td><td>${r.eDate || '&mdash;'}</td><td class="num">${r.eUnit || '&mdash;'}</td><td class="num">${fmt(r.electricity)}</td><td class="link-cell">${linkCell(r.url)}</td></tr>`).join('')}</tbody>`;
+      <thead><tr><th class="col-month">Month</th><th class="col-date">Transfer date</th><th class="num">Units (kWh)</th><th class="num">Amount (THB)</th><th>Link</th></tr></thead>
+      <tbody>${slice.map(r => `<tr><td class="col-month">${r.label}</td><td class="col-date">${r.eDate || '&mdash;'}</td><td class="num">${r.eUnit || '&mdash;'}</td><td class="num">${fmt(r.electricity)}</td><td class="link-cell">${linkCell(r.url)}</td></tr>`).join('')}</tbody>`;
     document.getElementById('tblWater').innerHTML = `
-      <thead><tr><th>Month</th><th>Transfer date</th><th class="num">Units</th><th class="num">Amount (THB)</th><th>Link</th></tr></thead>
-      <tbody>${slice.map(r => `<tr><td>${r.label}</td><td>${r.wDate || '&mdash;'}</td><td class="num">${r.wUnit || '&mdash;'}</td><td class="num">${fmt(r.water)}</td><td class="link-cell">${linkCell(r.url)}</td></tr>`).join('')}</tbody>`;
+      <thead><tr><th class="col-month">Month</th><th class="col-date">Transfer date</th><th class="num">Units</th><th class="num">Amount (THB)</th><th>Link</th></tr></thead>
+      <tbody>${slice.map(r => `<tr><td class="col-month">${r.label}</td><td class="col-date">${r.wDate || '&mdash;'}</td><td class="num">${r.wUnit || '&mdash;'}</td><td class="num">${fmt(r.water)}</td><td class="link-cell">${linkCell(r.url)}</td></tr>`).join('')}</tbody>`;
     document.getElementById('tblTelecom').innerHTML = `
-      <thead><tr><th>Month</th><th>Transfer date</th><th class="num">Internet (THB)</th><th class="num">Mobile (THB)</th><th class="num">Total (THB)</th><th>Link</th></tr></thead>
-      <tbody>${slice.map(r => `<tr><td>${r.label}</td><td>${r.iDate || '&mdash;'}</td><td class="num">${fmt(r.internet)}</td><td class="num">${fmt(r.mobile)}</td><td class="num">${fmt(r.trueCombined)}</td><td class="link-cell">${linkCell(r.url)}</td></tr>`).join('')}</tbody>`;
+      <thead><tr><th class="col-month">Month</th><th class="col-date">Transfer date</th><th class="num">Internet (THB)</th><th class="num">Mobile (THB)</th><th class="num">Total (THB)</th><th>Link</th></tr></thead>
+      <tbody>${slice.map(r => `<tr><td class="col-month">${r.label}</td><td class="col-date">${r.iDate || '&mdash;'}</td><td class="num">${fmt(r.internet)}</td><td class="num">${fmt(r.mobile)}</td><td class="num">${fmt(r.trueCombined)}</td><td class="link-cell">${linkCell(r.url)}</td></tr>`).join('')}</tbody>`;
   }
 
   // ---- Year over Year ----
@@ -598,7 +622,7 @@ function buildDashboard(raw) {
       options: {
         responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
         plugins: {
-          legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11, weight: '600' }, color: '#111827' } },
+          legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 }, color: '#111827' } },
           tooltip: { backgroundColor: '#111827', padding: 10, callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.parsed.y) + ' THB' } }
         },
         scales: { x: { ticks: { font: { size: 11 }, color: '#6B7280' }, grid: { display: false } }, y: { ticks: { font: { size: 11 }, color: '#6B7280' }, grid: { color: '#EFEFF1' } } }
