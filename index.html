@@ -151,11 +151,26 @@ function fmt(v) { return v.toLocaleString(undefined, {minimumFractionDigits:2, m
 
 Papa.parse(CSV_URL, {
   download: true,
-  header: true,
-  skipEmptyLines: true,
+  header: false,
+  skipEmptyLines: false,
   complete: function(results) {
     try {
-      buildDashboard(results.data);
+      const raw = results.data;
+      // Find the real header row: the first row whose first cell is exactly "Month"
+      const headerRowIdx = raw.findIndex(row => (row[0] || "").trim() === "Month");
+      if (headerRowIdx === -1) {
+        document.getElementById('app').textContent = "Could not find a header row starting with 'Month'. Check the sheet layout.";
+        return;
+      }
+      const headers = raw[headerRowIdx].map(h => (h || "").trim());
+      const dataRows = raw.slice(headerRowIdx + 1)
+        .filter(row => row.some(cell => (cell || "").trim() !== ""))
+        .map(row => {
+          const obj = {};
+          headers.forEach((h, i) => { obj[h] = row[i]; });
+          return obj;
+        });
+      buildDashboard(dataRows);
     } catch (e) {
       document.getElementById('app').textContent = "Something went wrong parsing the data: " + e.message;
     }
