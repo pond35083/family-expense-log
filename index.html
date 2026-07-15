@@ -564,7 +564,7 @@ function buildDashboard(raw) {
         { label: 'Units (kWh)', data: slice.map(r => r.eUnitNum), borderColor: '#92400E', backgroundColor: '#92400E', yAxisID: 'y1', borderWidth: 1.5, borderDash: [4, 3], pointRadius: 2, pointHoverRadius: 4, tension: 0.3 }
       ] },
       options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { position: 'bottom', labels: { boxWidth: 5, pointStyleWidth: 6, usePointStyle: true, pointStyle: 'circle', font: { size: 9 } } }, tooltip: { backgroundColor: '#111827' } },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 4, boxHeight: 4, pointStyleWidth: 4, usePointStyle: true, pointStyle: 'circle', font: { size: 9 } } }, tooltip: { backgroundColor: '#111827' } },
         scales: {
           x: { ticks: { font: { size: 9 }, color: '#6B7280', maxRotation: 60, minRotation: 45 }, grid: { display: false } },
           y: { position: 'left', ticks: { font: { size: 9 }, color: '#B45309' }, grid: { color: '#EFEFF1' }, title: { display: true, text: 'THB', font: { size: 9 } } },
@@ -580,7 +580,7 @@ function buildDashboard(raw) {
         { label: 'Units', data: slice.map(r => r.wUnitNum), borderColor: '#164E63', backgroundColor: '#164E63', yAxisID: 'y1', borderWidth: 1.5, borderDash: [4, 3], pointRadius: 2, pointHoverRadius: 4, tension: 0.3 }
       ] },
       options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { position: 'bottom', labels: { boxWidth: 5, pointStyleWidth: 6, usePointStyle: true, pointStyle: 'circle', font: { size: 9 } } }, tooltip: { backgroundColor: '#111827' } },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 4, boxHeight: 4, pointStyleWidth: 4, usePointStyle: true, pointStyle: 'circle', font: { size: 9 } } }, tooltip: { backgroundColor: '#111827' } },
         scales: {
           x: { ticks: { font: { size: 9 }, color: '#6B7280', maxRotation: 60, minRotation: 45 }, grid: { display: false } },
           y: { position: 'left', ticks: { font: { size: 9 }, color: '#0072B2' }, grid: { color: '#EFEFF1' }, title: { display: true, text: 'THB', font: { size: 9 } } },
@@ -596,7 +596,7 @@ function buildDashboard(raw) {
         { label: 'Mobile', data: slice.map(r => r.mobile), borderColor: '#CC79A7', backgroundColor: '#CC79A7', borderWidth: 1.5, pointRadius: 2, pointHoverRadius: 4, tension: 0.3 }
       ] },
       options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { position: 'bottom', labels: { boxWidth: 5, pointStyleWidth: 6, usePointStyle: true, pointStyle: 'circle', font: { size: 9 } } }, tooltip: { backgroundColor: '#111827' } },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 4, boxHeight: 4, pointStyleWidth: 4, usePointStyle: true, pointStyle: 'circle', font: { size: 9 } } }, tooltip: { backgroundColor: '#111827' } },
         scales: { x: { ticks: { font: { size: 9 }, color: '#6B7280', maxRotation: 60, minRotation: 45 }, grid: { display: false } }, y: { ticks: { font: { size: 9 }, color: '#6B7280' }, grid: { color: '#EFEFF1' }, title: { display: true, text: 'THB', font: { size: 9 } } } } }
     });
   }
@@ -650,7 +650,7 @@ function buildDashboard(raw) {
       options: {
         responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
         plugins: {
-          legend: { position: 'bottom', labels: { boxWidth: 6, pointStyleWidth: 7, usePointStyle: true, pointStyle: 'circle', font: { size: 11 }, color: '#111827' } },
+          legend: { position: 'bottom', labels: { boxWidth: 5, boxHeight: 5, pointStyleWidth: 5, usePointStyle: true, pointStyle: 'circle', font: { size: 11 }, color: '#111827' } },
           tooltip: { backgroundColor: '#111827', padding: 10, callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.parsed.y) + ' THB' } }
         },
         scales: { x: { ticks: { font: { size: 11 }, color: '#6B7280' }, grid: { display: false } }, y: { ticks: { font: { size: 11 }, color: '#6B7280' }, grid: { color: '#EFEFF1' } } }
