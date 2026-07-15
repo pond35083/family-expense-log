@@ -8,44 +8,75 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
   :root {
-    --purple: #7C3AED;
-    --purple-light: #EDE9FE;
-    --blue: #2563EB;
-    --blue-light: #DBEAFE;
-    --cyan: #0891B2;
-    --cyan-light: #CFFAFE;
-    --green: #16A34A;
-    --green-light: #DCFCE7;
-    --violet: #A855F7;
-    --violet-light: #F3E8FF;
-    --teal: #0D9488;
-    --teal-light: #CCFBF1;
-    --ink: #1E1B2E;
+    --ink: #111827;
     --sub: #6B7280;
-    --border: #E5E7EB;
+    --border: #D4D4D8;
     --bg-card: #FFFFFF;
+    --bg-page: #F5F5F7;
+
+    --total-dark: #3B0764;
+    --total: #6D28D9;
+    --total-light: #EDE9FE;
+
+    --electricity: #D97706;
+    --electricity-light: #FEF3C7;
+
+    --water: #1D4ED8;
+    --water-light: #DBEAFE;
+
+    --internet: #15803D;
+    --internet-light: #DCFCE7;
+
+    --mobile: #9333EA;
+    --mobile-light: #F3E8FF;
+
+    --true-c: #0F766E;
+    --true-light: #CCFBF1;
   }
   * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
     margin: 0;
-    padding: 24px 16px;
-    background: linear-gradient(180deg, #FAF9FF 0%, #F5F7FF 100%);
+    padding: 0 0 40px;
+    background: var(--bg-page);
     color: var(--ink);
   }
-  .dashboard { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+  .dashboard { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 36px; padding: 0 16px; }
 
-  .header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; padding: 4px 4px 0; }
-  .header h1 { font-size: 22px; font-weight: 700; margin: 0; }
+  /* Nav */
+  nav.topnav {
+    position: sticky; top: 0; z-index: 20;
+    background: var(--ink);
+    padding: 0 16px;
+    overflow-x: auto;
+    white-space: nowrap;
+    margin-bottom: 8px;
+  }
+  nav.topnav .navwrap { max-width: 1000px; margin: 0 auto; display: flex; gap: 4px; }
+  nav.topnav a {
+    color: #D1D5DB; text-decoration: none; font-size: 13px; font-weight: 600;
+    padding: 14px 14px; display: inline-block; border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  nav.topnav a:hover { color: #FBBF24; border-color: #FBBF24; }
+
+  .header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; padding: 24px 4px 0; }
+  .header h1 { font-size: 24px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
   .header span { font-size: 13px; color: var(--sub); }
+
+  section { scroll-margin-top: 56px; }
 
   .card {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 16px;
-    padding: 20px;
+    padding: 22px;
+    box-shadow: 0 1px 3px rgba(17,24,39,0.05);
   }
+  .section-eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--sub); margin: 0 0 4px; }
 
+  /* Filters */
   .filter-bar { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
   .filter-group { display: flex; flex-direction: column; gap: 4px; }
   .filter-group label { font-size: 11px; font-weight: 600; color: var(--sub); text-transform: uppercase; letter-spacing: 0.03em; }
@@ -54,91 +85,96 @@
     border-radius: 10px; border: 1px solid var(--border); background: #FAFAFB;
     min-width: 140px; color: var(--ink);
   }
-
   .switch-row { display: flex; align-items: center; gap: 10px; margin-left: auto; }
   .switch-row .switch-label { font-size: 13px; font-weight: 500; color: var(--sub); }
   .switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
   .switch input { opacity: 0; width: 0; height: 0; }
-  .slider {
-    position: absolute; cursor: pointer; inset: 0;
-    background: #D1D5DB; border-radius: 999px; transition: 0.2s;
-  }
-  .slider::before {
-    content: ""; position: absolute; height: 18px; width: 18px;
-    left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.2s;
-  }
-  input:checked + .slider { background: var(--purple); }
+  .slider { position: absolute; cursor: pointer; inset: 0; background: #D1D5DB; border-radius: 999px; transition: 0.2s; }
+  .slider::before { content: ""; position: absolute; height: 18px; width: 18px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.2s; }
+  input:checked + .slider { background: var(--total); }
   input:checked + .slider::before { transform: translateX(20px); }
 
-  .ban-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-  .ban-header h2 { font-size: 15px; font-weight: 600; margin: 0; }
-  .ban-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-  .ban-card { border-radius: 14px; padding: 16px; }
-  .ban-card .ban-label { font-size: 12px; font-weight: 600; opacity: 0.75; margin-bottom: 6px; }
+  /* BAN */
+  .ban-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .ban-header h2 { font-size: 16px; font-weight: 700; margin: 0; }
+  .ban-grid { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 14px; }
+  .ban-card { border-radius: 14px; padding: 18px; }
+  .ban-card .ban-label { font-size: 12px; font-weight: 700; opacity: 0.8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.03em; }
   .ban-card .ban-value { font-size: 22px; font-weight: 700; }
-  .ban-card .ban-sub { font-size: 11px; opacity: 0.6; margin-top: 4px; }
-  .ban-total { background: var(--purple-light); color: #4C1D95; }
-  .ban-electricity { background: var(--blue-light); color: #1E3A8A; }
-  .ban-water { background: var(--cyan-light); color: #164E63; }
-  .ban-true { background: var(--teal-light); color: #134E4A; }
+  .ban-card .ban-sub { font-size: 11px; opacity: 0.7; margin-top: 6px; }
+  .ban-total { background: var(--total-dark); color: #FFFFFF; }
+  .ban-total .ban-value { font-size: 32px; }
+  .ban-electricity { background: var(--electricity-light); color: #7C2D12; }
+  .ban-water { background: var(--water-light); color: #1E3A8A; }
+  .ban-true { background: var(--true-light); color: #134E4A; }
 
-  .chart-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; }
-  .chart-header h2 { font-size: 15px; font-weight: 600; margin: 0; }
+  /* Charts */
+  .chart-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .chart-header h2 { font-size: 16px; font-weight: 700; margin: 0; }
   .toggles { display: flex; gap: 8px; flex-wrap: wrap; }
-  .toggle {
-    border: none; border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 500;
-    cursor: pointer; color: #6b6a67; background: #F1F1F4; transition: opacity 0.15s ease;
-  }
-  .toggle.off { opacity: 0.4; }
-  .t-overall { background: var(--purple-light); color: #4C1D95; }
-  .t-electricity { background: var(--blue-light); color: #1E3A8A; }
-  .t-water { background: var(--cyan-light); color: #164E63; }
-  .t-internet { background: var(--green-light); color: #14532D; }
-  .t-mobile { background: var(--violet-light); color: #581C87; }
-  .t-true { background: var(--teal-light); color: #134E4A; }
+  .toggle { border: none; border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 600; cursor: pointer; color: #4B5563; background: #F1F1F4; transition: opacity 0.15s ease; }
+  .toggle.off { opacity: 0.35; }
+  .t-overall { background: var(--total-light); color: var(--total-dark); }
+  .t-electricity { background: var(--electricity-light); color: #7C2D12; }
+  .t-water { background: var(--water-light); color: #1E3A8A; }
+  .t-internet { background: var(--internet-light); color: #14532D; }
+  .t-mobile { background: var(--mobile-light); color: #581C87; }
+  .t-true { background: var(--true-light); color: #134E4A; }
   .chart-container { height: 320px; }
 
+  /* YoY controls */
+  .yoy-controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-bottom: 16px; }
+
+  /* Tables */
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  thead th {
-    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;
-    color: var(--sub); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--border);
-    position: sticky; top: 0; background: var(--bg-card);
-  }
-  tbody td { padding: 9px 10px; border-bottom: 1px solid #F3F4F6; }
+  thead th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--sub); font-weight: 700; padding: 8px 10px; border-bottom: 2px solid var(--border); position: sticky; top: 0; background: var(--bg-card); }
+  tbody td { padding: 9px 10px; border-bottom: 1px solid #EFEFF1; }
   tbody tr:hover { background: #FAFAFB; }
   .table-scroll { max-height: 320px; overflow-y: auto; border-radius: 10px; }
   .num { text-align: right; font-variant-numeric: tabular-nums; }
-  .link-cell a { color: var(--purple); text-decoration: none; font-weight: 500; }
+  .link-cell a { color: var(--total); text-decoration: none; font-weight: 600; }
   .link-cell a:hover { text-decoration: underline; }
   .link-cell span { color: #C4C4CC; }
-  .table-title { font-size: 15px; font-weight: 600; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .table-title { font-size: 15px; font-weight: 700; margin: 0 0 14px; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 
   .status { font-size: 13px; color: var(--sub); padding: 40px 0; text-align: center; }
 
   @media (max-width: 700px) {
     .ban-grid { grid-template-columns: repeat(2, 1fr); }
+    .ban-total { grid-column: span 2; }
     .switch-row { margin-left: 0; }
   }
 </style>
 </head>
 <body>
-<div class="dashboard">
 
+<nav class="topnav">
+  <div class="navwrap">
+    <a href="#overview">Overview</a>
+    <a href="#trend">Trend</a>
+    <a href="#yoy">Year over Year</a>
+    <a href="#breakdown">Breakdown</a>
+    <a href="#electricity">Electricity</a>
+    <a href="#water">Water</a>
+    <a href="#telecom">Telecom</a>
+  </div>
+</nav>
+
+<div class="dashboard">
   <div class="header">
     <h1>Family Utility Expenses</h1>
     <span id="rangeLabel">Loading...</span>
   </div>
 
   <div id="app" class="status">Fetching latest data...</div>
-
 </div>
 
 <script>
-// Published CSV URL (Google Sheets: File > Share > Publish to web > CSV)
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5AI2tZWpEFtHFrtFJ_X0fvkqH7i6oGiVm0LDu2F8heW_7rDU7rhzVYe1bCAdjMYASgh6rpalUPTyK/pub?gid=0&single=true&output=csv";
 
 const MONTH_ORDER = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const YOY_COLORS = ["#5B21B6","#D97706","#1D4ED8","#15803D","#9333EA","#0F766E","#DB2777","#0369A1"];
 
 function toNumber(val) {
   if (val === null || val === undefined || val === "") return null;
@@ -156,7 +192,6 @@ Papa.parse(CSV_URL, {
   complete: function(results) {
     try {
       const raw = results.data;
-      // Find the real header row: the first row whose first cell is exactly "Month"
       const headerRowIdx = raw.findIndex(row => (row[0] || "").trim() === "Month");
       if (headerRowIdx === -1) {
         document.getElementById('app').textContent = "Could not find a header row starting with 'Month'. Check the sheet layout.";
@@ -194,15 +229,10 @@ function buildDashboard(raw) {
       const month = (r["Month"] || "").trim();
       const year = (r["Year"] || "").trim();
       return {
-        month, year,
-        label: month + " " + year,
-        monthIdx: MONTH_ORDER.indexOf(month),
+        month, year, label: month + " " + year, monthIdx: MONTH_ORDER.indexOf(month),
         electricity, water, internet, mobile, trueCombined, total,
-        eDate: r["E-Transfer Date"] || "",
-        wDate: r["W-Transfer Date"] || "",
-        iDate: r["I-Transfer Date"] || "",
-        url: (r["URL"] || "").trim(),
-        remark: r["Remark"] || ""
+        eDate: r["E-Transfer Date"] || "", wDate: r["W-Transfer Date"] || "", iDate: r["I-Transfer Date"] || "",
+        url: (r["URL"] || "").trim(), remark: r["Remark"] || ""
       };
     })
     .filter(r => r.month && r.year)
@@ -215,10 +245,24 @@ function buildDashboard(raw) {
 
   document.getElementById('rangeLabel').textContent = rows[0].label + " \u2013 " + rows[rows.length - 1].label;
 
-  // ---- Build page shell ----
   const app = document.getElementById('app');
   app.className = '';
   app.innerHTML = `
+    <section id="overview" class="card">
+      <div class="ban-header">
+        <div>
+          <p class="section-eyebrow">Snapshot</p>
+          <h2>Overview</h2>
+        </div>
+        <div class="switch-row" style="margin-left:0;">
+          <span class="switch-label">Monthly</span>
+          <label class="switch"><input type="checkbox" id="banToggle"><span class="slider"></span></label>
+          <span class="switch-label">Yearly</span>
+        </div>
+      </div>
+      <div class="ban-grid" id="banGrid"></div>
+    </section>
+
     <div class="card filter-bar">
       <div class="filter-group">
         <label>From</label>
@@ -230,74 +274,90 @@ function buildDashboard(raw) {
       </div>
       <div class="switch-row">
         <span class="switch-label">Combined</span>
-        <label class="switch">
-          <input type="checkbox" id="splitToggle" checked>
-          <span class="slider"></span>
-        </label>
+        <label class="switch"><input type="checkbox" id="splitToggle" checked><span class="slider"></span></label>
         <span class="switch-label">Split (Internet / Mobile)</span>
       </div>
     </div>
 
-    <div class="card">
-      <div class="ban-header">
-        <h2>Overview</h2>
-        <div class="switch-row" style="margin-left:0;">
-          <span class="switch-label">Monthly</span>
-          <label class="switch">
-            <input type="checkbox" id="banToggle">
-            <span class="slider"></span>
-          </label>
-          <span class="switch-label">Yearly</span>
-        </div>
-      </div>
-      <div class="ban-grid" id="banGrid"></div>
-    </div>
-
-    <div class="card">
+    <section id="trend" class="card">
       <div class="chart-header">
-        <h2>Expense trend</h2>
+        <div><p class="section-eyebrow">History</p><h2>Expense trend</h2></div>
         <div class="toggles" id="lineToggles"></div>
       </div>
       <div class="chart-container"><canvas id="lineChart"></canvas></div>
-    </div>
+    </section>
 
-    <div class="card">
+    <section id="yoy" class="card">
+      <p class="section-eyebrow">Compare</p>
+      <h2 style="margin:0 0 16px;font-size:16px;">Year over year</h2>
+      <div class="yoy-controls">
+        <div class="filter-group">
+          <label>Metric</label>
+          <select id="yoyMetric">
+            <option value="total">Total</option>
+            <option value="electricity">Electricity</option>
+            <option value="water">Water</option>
+            <option value="trueCombined">True (Internet + Mobile)</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>From year</label>
+          <select id="yoyFromYear"></select>
+        </div>
+        <div class="filter-group">
+          <label>To year</label>
+          <select id="yoyToYear"></select>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="yoyChart"></canvas></div>
+    </section>
+
+    <section id="breakdown" class="card">
       <div class="chart-header">
-        <h2>Monthly breakdown</h2>
+        <div><p class="section-eyebrow">Composition</p><h2>Monthly breakdown</h2></div>
       </div>
       <div class="chart-container"><canvas id="barChart"></canvas></div>
-    </div>
+    </section>
 
-    <div class="card">
-      <p class="table-title"><span class="dot" style="background:var(--blue);"></span>Electricity</p>
+    <section id="electricity" class="card">
+      <p class="table-title"><span class="dot" style="background:var(--electricity);"></span>Electricity</p>
       <div class="table-scroll"><table id="tblElectricity"></table></div>
-    </div>
+    </section>
 
-    <div class="card">
-      <p class="table-title"><span class="dot" style="background:var(--cyan);"></span>Water</p>
+    <section id="water" class="card">
+      <p class="table-title"><span class="dot" style="background:var(--water);"></span>Water</p>
       <div class="table-scroll"><table id="tblWater"></table></div>
-    </div>
+    </section>
 
-    <div class="card">
-      <p class="table-title"><span class="dot" style="background:var(--teal);"></span>Telecom (Internet &amp; Mobile)</p>
+    <section id="telecom" class="card">
+      <p class="table-title"><span class="dot" style="background:var(--true-c);"></span>Telecom (Internet &amp; Mobile)</p>
       <div class="table-scroll"><table id="tblTelecom"></table></div>
-    </div>
+    </section>
   `;
 
-  // ---- Populate From/To dropdowns ----
+  // ---- From/To dropdowns: descending order, default = current year Jan -> latest ----
   const fromSel = document.getElementById('fromSel');
   const toSel = document.getElementById('toSel');
-  rows.forEach((r, i) => {
-    fromSel.innerHTML += `<option value="${i}">${r.label}</option>`;
-    toSel.innerHTML += `<option value="${i}">${r.label}</option>`;
+  const descRows = rows.map((r, i) => ({ ...r, idx: i })).slice().reverse();
+  descRows.forEach(r => {
+    fromSel.innerHTML += `<option value="${r.idx}">${r.label}</option>`;
+    toSel.innerHTML += `<option value="${r.idx}">${r.label}</option>`;
   });
-  fromSel.value = 0;
-  toSel.value = rows.length - 1;
+
+  const currentYear = String(new Date().getFullYear());
+  const curYearRows = rows.map((r, i) => ({ ...r, idx: i })).filter(r => r.year === currentYear);
+  let defaultFrom = 0, defaultTo = rows.length - 1;
+  if (curYearRows.length) {
+    defaultFrom = curYearRows[0].idx;
+    defaultTo = curYearRows[curYearRows.length - 1].idx;
+  }
+  fromSel.value = defaultFrom;
+  toSel.value = defaultTo;
 
   const splitToggle = document.getElementById('splitToggle');
   const banToggle = document.getElementById('banToggle');
 
-  let lineChart = null, barChart = null;
+  let lineChart = null, barChart = null, yoyChart = null;
   const lineVisible = { overall: true, electricity: true, water: true, internet: true, mobile: true, trueCombined: true };
 
   function currentSlice() {
@@ -326,21 +386,21 @@ function buildDashboard(raw) {
       <div class="ban-card ban-total"><div class="ban-label">Total</div><div class="ban-value">${fmt(total)}</div><div class="ban-sub">${subLabel}</div></div>
       <div class="ban-card ban-electricity"><div class="ban-label">Electricity</div><div class="ban-value">${fmt(electricity)}</div><div class="ban-sub">${subLabel}</div></div>
       <div class="ban-card ban-water"><div class="ban-label">Water</div><div class="ban-value">${fmt(water)}</div><div class="ban-sub">${subLabel}</div></div>
-      <div class="ban-card ban-true"><div class="ban-label">True (Internet + Mobile)</div><div class="ban-value">${fmt(trueCombined)}</div><div class="ban-sub">${subLabel}</div></div>
+      <div class="ban-card ban-true"><div class="ban-label">True</div><div class="ban-value">${fmt(trueCombined)}</div><div class="ban-sub">${subLabel}</div></div>
     `;
   }
 
   function seriesForMode(split) {
     const base = [
-      { key: "overall", label: "Overall", color: "#7C3AED", getVal: r => r.total },
-      { key: "electricity", label: "Electricity", color: "#2563EB", getVal: r => r.electricity },
-      { key: "water", label: "Water", color: "#0891B2", getVal: r => r.water }
+      { key: "overall", label: "Overall", color: "#6D28D9", getVal: r => r.total },
+      { key: "electricity", label: "Electricity", color: "#D97706", getVal: r => r.electricity },
+      { key: "water", label: "Water", color: "#1D4ED8", getVal: r => r.water }
     ];
     if (split) {
-      base.push({ key: "internet", label: "Internet", color: "#16A34A", getVal: r => r.internet });
-      base.push({ key: "mobile", label: "Mobile", color: "#A855F7", getVal: r => r.mobile });
+      base.push({ key: "internet", label: "Internet", color: "#15803D", getVal: r => r.internet });
+      base.push({ key: "mobile", label: "Mobile", color: "#9333EA", getVal: r => r.mobile });
     } else {
-      base.push({ key: "trueCombined", label: "True", color: "#0D9488", getVal: r => r.trueCombined });
+      base.push({ key: "trueCombined", label: "True", color: "#0F766E", getVal: r => r.trueCombined });
     }
     return base;
   }
@@ -369,81 +429,57 @@ function buildDashboard(raw) {
     const split = splitToggle.checked;
     const series = seriesForMode(split);
     renderLineToggles(series);
-
     const labels = slice.map(r => r.label);
 
     if (lineChart) lineChart.destroy();
     lineChart = new Chart(document.getElementById('lineChart'), {
       type: 'line',
-      data: {
-        labels,
-        datasets: series.map(s => ({
-          _key: s.key,
-          label: s.label,
-          data: slice.map(s.getVal),
-          borderColor: s.color,
-          backgroundColor: s.color,
-          borderWidth: 2,
-          pointRadius: 2,
-          pointHoverRadius: 5,
-          tension: 0.3,
-          fill: false,
-          hidden: lineVisible[s.key] === false
-        }))
-      },
+      data: { labels, datasets: series.map(s => ({
+        _key: s.key, label: s.label, data: slice.map(s.getVal),
+        borderColor: s.color, backgroundColor: s.color, borderWidth: 2.5,
+        pointRadius: 2, pointHoverRadius: 5, tension: 0.3, fill: false,
+        hidden: lineVisible[s.key] === false
+      })) },
       options: {
         responsive: true, maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
         plugins: {
           legend: { display: false },
-          tooltip: {
-            backgroundColor: '#1E1B2E', padding: 10,
-            callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.parsed.y) + ' THB' }
-          }
+          tooltip: { backgroundColor: '#111827', padding: 10, callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.parsed.y) + ' THB' } }
         },
         scales: {
-          x: { ticks: { font: { size: 10 }, color: '#9CA3AF', maxRotation: 60, minRotation: 45 }, grid: { display: false } },
-          y: { ticks: { font: { size: 11 }, color: '#9CA3AF' }, grid: { color: '#F3F4F6' } }
+          x: { ticks: { font: { size: 10 }, color: '#6B7280', maxRotation: 60, minRotation: 45 }, grid: { display: false } },
+          y: { ticks: { font: { size: 11 }, color: '#6B7280' }, grid: { color: '#EFEFF1' } }
         }
       }
     });
 
     const barSeries = split
       ? [
-          { key: "electricity", label: "Electricity", color: "#2563EB", getVal: r => r.electricity },
-          { key: "water", label: "Water", color: "#0891B2", getVal: r => r.water },
-          { key: "internet", label: "Internet", color: "#16A34A", getVal: r => r.internet },
-          { key: "mobile", label: "Mobile", color: "#A855F7", getVal: r => r.mobile }
+          { key: "electricity", label: "Electricity", color: "#D97706", getVal: r => r.electricity },
+          { key: "water", label: "Water", color: "#1D4ED8", getVal: r => r.water },
+          { key: "internet", label: "Internet", color: "#15803D", getVal: r => r.internet },
+          { key: "mobile", label: "Mobile", color: "#9333EA", getVal: r => r.mobile }
         ]
       : [
-          { key: "electricity", label: "Electricity", color: "#2563EB", getVal: r => r.electricity },
-          { key: "water", label: "Water", color: "#0891B2", getVal: r => r.water },
-          { key: "trueCombined", label: "True", color: "#0D9488", getVal: r => r.trueCombined }
+          { key: "electricity", label: "Electricity", color: "#D97706", getVal: r => r.electricity },
+          { key: "water", label: "Water", color: "#1D4ED8", getVal: r => r.water },
+          { key: "trueCombined", label: "True", color: "#0F766E", getVal: r => r.trueCombined }
         ];
 
     if (barChart) barChart.destroy();
     barChart = new Chart(document.getElementById('barChart'), {
       type: 'bar',
-      data: {
-        labels,
-        datasets: barSeries.map(s => ({
-          label: s.label,
-          data: slice.map(s.getVal),
-          backgroundColor: s.color
-        }))
-      },
+      data: { labels, datasets: barSeries.map(s => ({ label: s.label, data: slice.map(s.getVal), backgroundColor: s.color })) },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } },
-          tooltip: {
-            backgroundColor: '#1E1B2E', padding: 10,
-            callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.parsed.y) + ' THB' }
-          }
+          legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11, weight: '600' }, color: '#111827' } },
+          tooltip: { backgroundColor: '#111827', padding: 10, callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.parsed.y) + ' THB' } }
         },
         scales: {
-          x: { stacked: true, ticks: { font: { size: 10 }, color: '#9CA3AF', maxRotation: 60, minRotation: 45 }, grid: { display: false } },
-          y: { stacked: true, ticks: { font: { size: 11 }, color: '#9CA3AF' }, grid: { color: '#F3F4F6' } }
+          x: { stacked: true, ticks: { font: { size: 10 }, color: '#374151', maxRotation: 60, minRotation: 45 }, grid: { display: false } },
+          y: { stacked: true, ticks: { font: { size: 11 }, color: '#374151' }, grid: { color: '#E5E7EB' } }
         }
       }
     });
@@ -457,33 +493,81 @@ function buildDashboard(raw) {
 
   function renderTables() {
     const slice = currentSlice().slice().reverse();
-
     document.getElementById('tblElectricity').innerHTML = `
       <thead><tr><th>Month</th><th>Transfer date</th><th class="num">Amount (THB)</th><th>Link</th></tr></thead>
-      <tbody>${slice.map(r => `<tr><td>${r.label}</td><td>${r.eDate || '&mdash;'}</td><td class="num">${fmt(r.electricity)}</td><td class="link-cell">${linkCell(r.url)}</td></tr>`).join('')}</tbody>
-    `;
+      <tbody>${slice.map(r => `<tr><td>${r.label}</td><td>${r.eDate || '&mdash;'}</td><td class="num">${fmt(r.electricity)}</td><td class="link-cell">${linkCell(r.url)}</td></tr>`).join('')}</tbody>`;
     document.getElementById('tblWater').innerHTML = `
       <thead><tr><th>Month</th><th>Transfer date</th><th class="num">Amount (THB)</th><th>Link</th></tr></thead>
-      <tbody>${slice.map(r => `<tr><td>${r.label}</td><td>${r.wDate || '&mdash;'}</td><td class="num">${fmt(r.water)}</td><td class="link-cell">${linkCell(r.url)}</td></tr>`).join('')}</tbody>
-    `;
+      <tbody>${slice.map(r => `<tr><td>${r.label}</td><td>${r.wDate || '&mdash;'}</td><td class="num">${fmt(r.water)}</td><td class="link-cell">${linkCell(r.url)}</td></tr>`).join('')}</tbody>`;
     document.getElementById('tblTelecom').innerHTML = `
       <thead><tr><th>Month</th><th>Transfer date</th><th class="num">Internet (THB)</th><th class="num">Mobile (THB)</th><th>Link</th></tr></thead>
-      <tbody>${slice.map(r => `<tr><td>${r.label}</td><td>${r.iDate || '&mdash;'}</td><td class="num">${fmt(r.internet)}</td><td class="num">${fmt(r.mobile)}</td><td class="link-cell">${linkCell(r.url)}</td></tr>`).join('')}</tbody>
-    `;
+      <tbody>${slice.map(r => `<tr><td>${r.label}</td><td>${r.iDate || '&mdash;'}</td><td class="num">${fmt(r.internet)}</td><td class="num">${fmt(r.mobile)}</td><td class="link-cell">${linkCell(r.url)}</td></tr>`).join('')}</tbody>`;
   }
 
-  function renderAll() {
-    renderCharts();
-    renderTables();
+  // ---- Year over Year ----
+  const years = [...new Set(rows.map(r => r.year))].sort();
+  const yoyMetricSel = document.getElementById('yoyMetric');
+  const yoyFromSel = document.getElementById('yoyFromYear');
+  const yoyToSel = document.getElementById('yoyToYear');
+  years.forEach(y => {
+    yoyFromSel.innerHTML += `<option value="${y}">${y}</option>`;
+    yoyToSel.innerHTML += `<option value="${y}">${y}</option>`;
+  });
+  yoyFromSel.value = years[0];
+  yoyToSel.value = years[years.length - 1];
+
+  function renderYoY() {
+    const metric = yoyMetricSel.value;
+    const yFrom = yoyFromSel.value, yTo = yoyToSel.value;
+    const selectedYears = years.filter(y => y >= yFrom && y <= yTo);
+
+    const datasets = selectedYears.map((y, i) => {
+      const yearData = MONTH_ORDER.map(m => {
+        const row = rows.find(r => r.year === y && r.month === m);
+        return row ? row[metric] : null;
+      });
+      return {
+        label: y,
+        data: yearData,
+        borderColor: YOY_COLORS[i % YOY_COLORS.length],
+        backgroundColor: YOY_COLORS[i % YOY_COLORS.length],
+        borderWidth: 2.5, pointRadius: 2, pointHoverRadius: 5,
+        tension: 0.3, fill: false, spanGaps: true
+      };
+    });
+
+    if (yoyChart) yoyChart.destroy();
+    yoyChart = new Chart(document.getElementById('yoyChart'), {
+      type: 'line',
+      data: { labels: MONTH_ORDER, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11, weight: '600' }, color: '#111827' } },
+          tooltip: { backgroundColor: '#111827', padding: 10, callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.parsed.y) + ' THB' } }
+        },
+        scales: {
+          x: { ticks: { font: { size: 11 }, color: '#6B7280' }, grid: { display: false } },
+          y: { ticks: { font: { size: 11 }, color: '#6B7280' }, grid: { color: '#EFEFF1' } }
+        }
+      }
+    });
   }
+
+  function renderAll() { renderCharts(); renderTables(); }
 
   fromSel.addEventListener('change', renderAll);
   toSel.addEventListener('change', renderAll);
   splitToggle.addEventListener('change', renderAll);
   banToggle.addEventListener('change', renderBANs);
+  yoyMetricSel.addEventListener('change', renderYoY);
+  yoyFromSel.addEventListener('change', renderYoY);
+  yoyToSel.addEventListener('change', renderYoY);
 
   renderBANs();
   renderAll();
+  renderYoY();
 }
 </script>
 </body>
