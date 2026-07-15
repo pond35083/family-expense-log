@@ -154,6 +154,20 @@
 
   .status { font-size: 13px; color: var(--sub); padding: 40px 0; text-align: center; }
 
+  .back-to-top {
+    position: fixed; bottom: 20px; right: 20px; z-index: 40;
+    width: 48px; height: 48px; border-radius: 50%;
+    background: var(--ink); color: #fff; border: none;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 14px rgba(17,24,39,0.28);
+    cursor: pointer;
+    opacity: 0; pointer-events: none; transform: translateY(10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .back-to-top.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+  .back-to-top svg { width: 22px; height: 22px; }
+  .back-to-top:focus-visible { outline: 2px solid #FBBF24; outline-offset: 2px; }
+
   @media (max-width: 700px) {
     .ban-grid { grid-template-columns: repeat(2, 1fr); }
     .ban-total { grid-column: span 2; }
@@ -167,6 +181,10 @@
 <nav class="topnav">
   <div class="navwrap" id="navwrap"></div>
 </nav>
+
+<button id="backToTop" class="back-to-top" aria-label="Back to top">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+</button>
 
 <div class="dashboard">
   <div class="header">
@@ -214,6 +232,12 @@ document.getElementById('navwrap').innerHTML = `
   <a href="#water">${icon('droplet')}Water</a>
   <a href="#telecom">${icon('wifi')}Telecom</a>
 `;
+
+const backToTopBtn = document.getElementById('backToTop');
+window.addEventListener('scroll', () => {
+  backToTopBtn.classList.toggle('visible', window.scrollY > 400);
+});
+backToTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
 Papa.parse(CSV_URL, {
   download: true, header: false, skipEmptyLines: false,
