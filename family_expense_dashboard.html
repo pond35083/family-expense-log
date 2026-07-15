@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Family Utility Expenses</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root {
+    --purple: #7C3AED;
+    --purple-light: #EDE9FE;
+    --blue: #2563EB;
+    --blue-light: #DBEAFE;
+    --cyan: #0891B2;
+    --cyan-light: #CFFAFE;
+    --green: #16A34A;
+    --green-light: #DCFCE7;
+    --violet: #A855F7;
+    --violet-light: #F3E8FF;
+    --teal: #0D9488;
+    --teal-light: #CCFBF1;
+    --ink: #1E1B2E;
+    --sub: #6B7280;
+    --border: #E5E7EB;
+    --bg-card: #FFFFFF;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 24px 16px;
+    background: linear-gradient(180deg, #FAF9FF 0%, #F5F7FF 100%);
+    color: var(--ink);
+  }
+  .dashboard { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+
+  .header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; padding: 4px 4px 0; }
+  .header h1 { font-size: 22px; font-weight: 700; margin: 0; }
+  .header span { font-size: 13px; color: var(--sub); }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  .filter-bar { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
+  .filter-group { display: flex; flex-direction: column; gap: 4px; }
+  .filter-group label { font-size: 11px; font-weight: 600; color: var(--sub); text-transform: uppercase; letter-spacing: 0.03em; }
+  .filter-group select {
+    font-family: inherit; font-size: 14px; padding: 8px 12px;
+    border-radius: 10px; border: 1px solid var(--border); background: #FAFAFB;
+    min-width: 140px; color: var(--ink);
+  }
+
+  .switch-row { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+  .switch-row .switch-label { font-size: 13px; font-weight: 500; color: var(--sub); }
+  .switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; cursor: pointer; inset: 0;
+    background: #D1D5DB; border-radius: 999px; transition: 0.2s;
+  }
+  .slider::before {
+    content: ""; position: absolute; height: 18px; width: 18px;
+    left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.2s;
+  }
+  input:checked + .slider { background: var(--purple); }
+  input:checked + .slider::before { transform: translateX(20px); }
+
+  .ban-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .ban-header h2 { font-size: 15px; font-weight: 600; margin: 0; }
+  .ban-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .ban-card { border-radius: 14px; padding: 16px; }
+  .ban-card .ban-label { font-size: 12px; font-weight: 600; opacity: 0.75; margin-bottom: 6px; }
+  .ban-card .ban-value { font-size: 22px; font-weight: 700; }
+  .ban-card .ban-sub { font-size: 11px; opacity: 0.6; margin-top: 4px; }
+  .ban-total { background: var(--purple-light); color: #4C1D95; }
+  .ban-electricity { background: var(--blue-light); color: #1E3A8A; }
+  .ban-water { background: var(--cyan-light); color: #164E63; }
+  .ban-true { background: var(--teal-light); color: #134E4A; }
+
+  .chart-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .chart-header h2 { font-size: 15px; font-weight: 600; margin: 0; }
+  .toggles { display: flex; gap: 8px; flex-wrap: wrap; }
+  .toggle {
+    border: none; border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 500;
+    cursor: pointer; color: #6b6a67; background: #F1F1F4; transition: opacity 0.15s ease;
+  }
+  .toggle.off { opacity: 0.4; }
+  .t-overall { background: var(--purple-light); color: #4C1D95; }
+  .t-electricity { background: var(--blue-light); color: #1E3A8A; }
+  .t-water { background: var(--cyan-light); color: #164E63; }
+  .t-internet { background: var(--green-light); color: #14532D; }
+  .t-mobile { background: var(--violet-light); color: #581C87; }
+  .t-true { background: var(--teal-light); color: #134E4A; }
+  .chart-container { height: 320px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;
+    color: var(--sub); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; background: var(--bg-card);
+  }
+  tbody td { padding: 9px 10px; border-bottom: 1px solid #F3F4F6; }
+  tbody tr:hover { background: #FAFAFB; }
+  .table-scroll { max-height: 320px; overflow-y: auto; border-radius: 10px; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .link-cell a { color: var(--purple); text-decoration: none; font-weight: 500; }
+  .link-cell a:hover { text-decoration: underline; }
+  .link-cell span { color: #C4C4CC; }
+  .table-title { font-size: 15px; font-weight: 600; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  .status { font-size: 13px; color: var(--sub); padding: 40px 0; text-align: center; }
+
+  @media (max-width: 700px) {
+    .ban-grid { grid-template-columns: repeat(2, 1fr); }
+    .switch-row { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="dashboard">
+
+  <div class="header">
+    <h1>Family Utility Expenses</h1>
+    <span id="rangeLabel">Loading...</span>
+  </div>
+
+  <div id="app" class="status">Fetching latest data...</div>
+
+</div>
+
+<script>
+// Published CSV URL (Google Sheets: File > Share > Publish to web > CSV)
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5AI2tZWpEFtHFrtFJ_X0fvkqH7i6oGiVm0LDu2F8heW_7rDU7rhzVYe1bCAdjMYASgh6rpalUPTyK/pub?gid=0&single=true&output=csv";
+
+const MONTH_ORDER = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function toNumber(val) {
+  if (val === null || val === undefined || val === "") return null;
+  const cleaned = String(val).replace(/,/g, "").trim();
+  const n = parseFloat(cleaned);
+  return isNaN(n) ? null : n;
+}
+function n0(v) { const x = toNumber(v); return x === null ? 0 : x; }
+function fmt(v) { return v.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+Papa.parse(CSV_URL, {
+  download: true,
+  header: true,
+  skipEmptyLines: true,
+  complete: function(results) {
+    try {
+      buildDashboard(results.data);
+    } catch (e) {
+      document.getElementById('app').textContent = "Something went wrong parsing the data: " + e.message;
+    }
+  },
+  error: function() {
+    document.getElementById('app').textContent = "Could not load data. Check the CSV_URL is set correctly.";
+  }
+});
+
+function buildDashboard(raw) {
+  const rows = raw
+    .filter(r => toNumber(r["Total Utiliy Expense"]) !== null || toNumber(r["Total Utility Expense"]) !== null)
+    .map(r => {
+      const totalCol = r["Total Utiliy Expense"] !== undefined ? r["Total Utiliy Expense"] : r["Total Utility Expense"];
+      const electricity = n0(r["Electricity Bill"]);
+      const water = n0(r["Water Bill"]);
+      const internet = n0(r["Internet Bill"]) + n0(r["Internet Bill (Add-On)"]) + n0(r["Internet VAT"]);
+      const mobile = n0(r["Phone Bill"]) + n0(r["Phone Vat"]);
+      const trueCombined = internet + mobile;
+      const total = toNumber(totalCol) !== null ? toNumber(totalCol) : (electricity + water + trueCombined);
+      const month = (r["Month"] || "").trim();
+      const year = (r["Year"] || "").trim();
+      return {
+        month, year,
+        label: month + " " + year,
+        monthIdx: MONTH_ORDER.indexOf(month),
+        electricity, water, internet, mobile, trueCombined, total,
+        eDate: r["E-Transfer Date"] || "",
+        wDate: r["W-Transfer Date"] || "",
+        iDate: r["I-Transfer Date"] || "",
+        url: (r["URL"] || "").trim(),
+        remark: r["Remark"] || ""
+      };
+    })
+    .filter(r => r.month && r.year)
+    .sort((a, b) => (parseInt(a.year) - parseInt(b.year)) || (a.monthIdx - b.monthIdx));
+
+  if (!rows.length) {
+    document.getElementById('app').textContent = "No rows with data found.";
+    return;
+  }
+
+  document.getElementById('rangeLabel').textContent = rows[0].label + " \u2013 " + rows[rows.length - 1].label;
+
+  // ---- Build page shell ----
+  const app = document.getElementById('app');
+  app.className = '';
+  app.innerHTML = `
+    <div class="card filter-bar">
+      <div class="filter-group">
+        <label>From</label>
+        <select id="fromSel"></select>
+      </div>
+      <div class="filter-group">
+        <label>To</label>
+        <select id="toSel"></select>
+      </div>
+      <div class="switch-row">
+        <span class="switch-label">Combined</span>
+        <label class="switch">
+          <input type="checkbox" id="splitToggle" checked>
+          <span class="slider"></span>
+        </label>
+        <span class="switch-label">Split (Internet / Mobile)</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ban-header">
+        <h2>Overview</h2>
+        <div class="switch-row" style="margin-left:0;">
+          <span class="switch-label">Monthly</span>
+          <label class="switch">
+            <input type="checkbox" id="banToggle">
+            <span class="slider"></span>
+          </label>
+          <span class="switch-label">Yearly</span>
+        </div>
+      </div>
+      <div class="ban-grid" id="banGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="chart-header">
+        <h2>Expense trend</h2>
+        <div class="toggles" id="lineToggles"></div>
+      </div>
+      <div class="chart-container"><canvas id="lineChart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="chart-header">
+        <h2>Monthly breakdown</h2>
+      </div>
+      <div class="chart-container"><canvas id="barChart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <p class="table-title"><span class="dot" style="background:var(--blue);"></span>Electricity</p>
+      <div class="table-scroll"><table id="tblElectricity"></table></div>
+    </div>
+
+    <div class="card">
+      <p class="table-title"><span class="dot" style="background:var(--cyan);"></span>Water</p>
+      <div class="table-scroll"><table id="tblWater"></table></div>
+    </div>
+
+    <div class="card">
+      <p class="table-title"><span class="dot" style="background:var(--teal);"></span>Telecom (Internet &amp; Mobile)</p>
+      <div class="table-scroll"><table id="tblTelecom"></table></div>
+    </div>
+  `;
+
+  // ---- Populate From/To dropdowns ----
+  const fromSel = document.getElementById('fromSel');
+  const toSel = document.getElementById('toSel');
+  rows.forEach((r, i) => {
+    fromSel.innerHTML += `<option value="${i}">${r.label}</option>`;
+    toSel.innerHTML += `<option value="${i}">${r.label}</option>`;
+  });
+  fromSel.value = 0;
+  toSel.value = rows.length - 1;
+
+  const splitToggle = document.getElementById('splitToggle');
+  const banToggle = document.getElementById('banToggle');
+
+  let lineChart = null, barChart = null;
+  const lineVisible = { overall: true, electricity: true, water: true, internet: true, mobile: true, trueCombined: true };
+
+  function currentSlice() {
+    const f = parseInt(fromSel.value), t = parseInt(toSel.value);
+    const lo = Math.min(f, t), hi = Math.max(f, t);
+    return rows.slice(lo, hi + 1);
+  }
+
+  function renderBANs() {
+    const yearly = banToggle.checked;
+    const latest = rows[rows.length - 1];
+    let total, electricity, water, trueCombined, subLabel;
+    if (!yearly) {
+      total = latest.total; electricity = latest.electricity; water = latest.water; trueCombined = latest.trueCombined;
+      subLabel = latest.label;
+    } else {
+      const yr = latest.year;
+      const yearRows = rows.filter(r => r.year === yr);
+      total = yearRows.reduce((s, r) => s + r.total, 0);
+      electricity = yearRows.reduce((s, r) => s + r.electricity, 0);
+      water = yearRows.reduce((s, r) => s + r.water, 0);
+      trueCombined = yearRows.reduce((s, r) => s + r.trueCombined, 0);
+      subLabel = "Year to date, " + yr;
+    }
+    document.getElementById('banGrid').innerHTML = `
+      <div class="ban-card ban-total"><div class="ban-label">Total</div><div class="ban-value">${fmt(total)}</div><div class="ban-sub">${subLabel}</div></div>
+      <div class="ban-card ban-electricity"><div class="ban-label">Electricity</div><div class="ban-value">${fmt(electricity)}</div><div class="ban-sub">${subLabel}</div></div>
+      <div class="ban-card ban-water"><div class="ban-label">Water</div><div class="ban-value">${fmt(water)}</div><div class="ban-sub">${subLabel}</div></div>
+      <div class="ban-card ban-true"><div class="ban-label">True (Internet + Mobile)</div><div class="ban-value">${fmt(trueCombined)}</div><div class="ban-sub">${subLabel}</div></div>
+    `;
+  }
+
+  function seriesForMode(split) {
+    const base = [
+      { key: "overall", label: "Overall", color: "#7C3AED", getVal: r => r.total },
+      { key: "electricity", label: "Electricity", color: "#2563EB", getVal: r => r.electricity },
+      { key: "water", label: "Water", color: "#0891B2", getVal: r => r.water }
+    ];
+    if (split) {
+      base.push({ key: "internet", label: "Internet", color: "#16A34A", getVal: r => r.internet });
+      base.push({ key: "mobile", label: "Mobile", color: "#A855F7", getVal: r => r.mobile });
+    } else {
+      base.push({ key: "trueCombined", label: "True", color: "#0D9488", getVal: r => r.trueCombined });
+    }
+    return base;
+  }
+
+  function renderLineToggles(series) {
+    const row = document.getElementById('lineToggles');
+    row.innerHTML = '';
+    series.forEach(s => {
+      const btn = document.createElement('button');
+      btn.className = 'toggle t-' + s.key + (lineVisible[s.key] === false ? ' off' : '');
+      btn.textContent = s.label;
+      btn.addEventListener('click', () => {
+        lineVisible[s.key] = !lineVisible[s.key];
+        btn.classList.toggle('off', !lineVisible[s.key]);
+        if (lineChart) {
+          const idx = lineChart.data.datasets.findIndex(d => d._key === s.key);
+          if (idx > -1) { lineChart.getDatasetMeta(idx).hidden = !lineVisible[s.key]; lineChart.update(); }
+        }
+      });
+      row.appendChild(btn);
+    });
+  }
+
+  function renderCharts() {
+    const slice = currentSlice();
+    const split = splitToggle.checked;
+    const series = seriesForMode(split);
+    renderLineToggles(series);
+
+    const labels = slice.map(r => r.label);
+
+    if (lineChart) lineChart.destroy();
+    lineChart = new Chart(document.getElementById('lineChart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: series.map(s => ({
+          _key: s.key,
+          label: s.label,
+          data: slice.map(s.getVal),
+          borderColor: s.color,
+          backgroundColor: s.color,
+          borderWidth: 2,
+          pointRadius: 2,
+          pointHoverRadius: 5,
+          tension: 0.3,
+          fill: false,
+          hidden: lineVisible[s.key] === false
+        }))
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1E1B2E', padding: 10,
+            callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.parsed.y) + ' THB' }
+          }
+        },
+        scales: {
+          x: { ticks: { font: { size: 10 }, color: '#9CA3AF', maxRotation: 60, minRotation: 45 }, grid: { display: false } },
+          y: { ticks: { font: { size: 11 }, color: '#9CA3AF' }, grid: { color: '#F3F4F6' } }
+        }
+      }
+    });
+
+    const barSeries = split
+      ? [
+          { key: "electricity", label: "Electricity", color: "#2563EB", getVal: r => r.electricity },
+          { key: "water", label: "Water", color: "#0891B2", getVal: r => r.water },
+          { key: "internet", label: "Internet", color: "#16A34A", getVal: r => r.internet },
+          { key: "mobile", label: "Mobile", color: "#A855F7", getVal: r => r.mobile }
+        ]
+      : [
+          { key: "electricity", label: "Electricity", color: "#2563EB", getVal: r => r.electricity },
+          { key: "water", label: "Water", color: "#0891B2", getVal: r => r.water },
+          { key: "trueCombined", label: "True", color: "#0D9488", getVal: r => r.trueCombined }
+        ];
+
+    if (barChart) barChart.destroy();
+    barChart = new Chart(document.getElementById('barChart'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: barSeries.map(s => ({
+          label: s.label,
+          data: slice.map(s.getVal),
+          backgroundColor: s.color
+        }))
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } },
+          tooltip: {
+            backgroundColor: '#1E1B2E', padding: 10,
+            callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.parsed.y) + ' THB' }
+          }
+        },
+        scales: {
+          x: { stacked: true, ticks: { font: { size: 10 }, color: '#9CA3AF', maxRotation: 60, minRotation: 45 }, grid: { display: false } },
+          y: { stacked: true, ticks: { font: { size: 11 }, color: '#9CA3AF' }, grid: { color: '#F3F4F6' } }
+        }
+      }
+    });
+  }
+
+  function linkCell(url) {
+    if (!url) return '<span>&mdash;</span>';
+    const safe = url.startsWith('http') ? url : ('https://' + url);
+    return `<a href="${safe}" target="_blank" rel="noopener">Open folder</a>`;
+  }
+
+  function renderTables() {
+    const slice = currentSlice().slice().reverse();
+
+    document.getElementById('tblElectricity').innerHTML = `
+      <thead><tr><th>Month</th><th>Transfer date</th><th class="num">Amount (THB)</th><th>Link</th></tr></thead>
+      <tbody>${slice.map(r => `<tr><td>${r.label}</td><td>${r.eDate || '&mdash;'}</td><td class="num">${fmt(r.electricity)}</td><td class="link-cell">${linkCell(r.url)}</td></tr>`).join('')}</tbody>
+    `;
+    document.getElementById('tblWater').innerHTML = `
+      <thead><tr><th>Month</th><th>Transfer date</th><th class="num">Amount (THB)</th><th>Link</th></tr></thead>
+      <tbody>${slice.map(r => `<tr><td>${r.label}</td><td>${r.wDate || '&mdash;'}</td><td class="num">${fmt(r.water)}</td><td class="link-cell">${linkCell(r.url)}</td></tr>`).join('')}</tbody>
+    `;
+    document.getElementById('tblTelecom').innerHTML = `
+      <thead><tr><th>Month</th><th>Transfer date</th><th class="num">Internet (THB)</th><th class="num">Mobile (THB)</th><th>Link</th></tr></thead>
+      <tbody>${slice.map(r => `<tr><td>${r.label}</td><td>${r.iDate || '&mdash;'}</td><td class="num">${fmt(r.internet)}</td><td class="num">${fmt(r.mobile)}</td><td class="link-cell">${linkCell(r.url)}</td></tr>`).join('')}</tbody>
+    `;
+  }
+
+  function renderAll() {
+    renderCharts();
+    renderTables();
+  }
+
+  fromSel.addEventListener('change', renderAll);
+  toSel.addEventListener('change', renderAll);
+  splitToggle.addEventListener('change', renderAll);
+  banToggle.addEventListener('change', renderBANs);
+
+  renderBANs();
+  renderAll();
+}
+</script>
+</body>
+</html>
