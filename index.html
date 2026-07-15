@@ -336,9 +336,11 @@ function buildDashboard(raw) {
       </section>
 
       <section id="breakdown" class="card">
-        <p class="section-eyebrow">Composition</p>
-        <h2 class="section-title">${icon('barChart')}Monthly Breakdown</h2>
-        <div class="chart-container" style="margin-top:16px;"><canvas id="barChart"></canvas></div>
+        <div class="chart-header">
+          <div><p class="section-eyebrow">Composition</p><h2 class="section-title">${icon('barChart')}Monthly Breakdown</h2></div>
+          <div class="toggles" id="barToggles"></div>
+        </div>
+        <div class="chart-container"><canvas id="barChart"></canvas></div>
       </section>
 
       <section id="electricity" class="card">
@@ -385,6 +387,7 @@ function buildDashboard(raw) {
   const banToggle = document.getElementById('banToggle');
   let lineChart = null, barChart = null, yoyChart = null, miniE = null, miniW = null, miniT = null;
   const lineVisible = { overall: true, electricity: true, water: true, internet: true, mobile: true, trueCombined: true };
+  const barVisible = { electricity: true, water: true, internet: true, mobile: true, trueCombined: true };
 
   function currentSlice() {
     const f = parseInt(fromSel.value), t = parseInt(toSel.value);
@@ -511,15 +514,40 @@ function buildDashboard(raw) {
           { key: "trueCombined", label: "True", color: "#0F766E", getVal: r => r.trueCombined }
         ];
 
+    const barToggleRow = document.getElementById('barToggles');
+    barToggleRow.innerHTML = '';
+    barSeries.forEach(s => {
+      const btn = document.createElement('button');
+      btn.className = 'toggle t-' + s.key + (barVisible[s.key] === false ? ' off' : '');
+      btn.textContent = s.label;
+      btn.addEventListener('click', () => {
+        barVisible[s.key] = !barVisible[s.key];
+        btn.classList.toggle('off', !barVisible[s.key]);
+        if (barChart) {
+          const idx = barChart.data.datasets.findIndex(d => d._key === s.key);
+          if (idx > -1) { barChart.getDatasetMeta(idx).hidden = !barVisible[s.key]; barChart.update(); }
+        }
+      });
+      barToggleRow.appendChild(btn);
+    });
+
     if (barChart) barChart.destroy();
     barChart = new Chart(document.getElementById('barChart'), {
       type: 'bar',
-      data: { labels, datasets: barSeries.map(s => ({ label: s.label, data: slice.map(s.getVal), backgroundColor: s.color })) },
+      data: { labels, datasets: barSeries.map(s => ({ _key: s.key, label: s.label, data: slice.map(s.getVal), backgroundColor: s.color, hidden: barVisible[s.key] === false })) },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true, pointStyle: 'circle', font: { size: 11 }, color: '#111827' } },
-          tooltip: { backgroundColor: '#111827', padding: 10, callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.parsed.y) + ' THB' } }
+          legend: { display: false },
+          tooltip: { backgroundColor: '#111827', padding: 10, callbacks: {
+            label: ctx => {
+              const chart = ctx.chart;
+              let monthTotal = 0;
+              chart.data.datasets.forEach((ds, i) => { if (!chart.getDatasetMeta(i).hidden) monthTotal += (ds.data[ctx.dataIndex] || 0); });
+              const pct = monthTotal > 0 ? ((ctx.parsed.y / monthTotal) * 100).toFixed(1) : '0.0';
+              return ctx.dataset.label + ': ' + fmt(ctx.parsed.y) + ' THB (' + pct + '%)';
+            }
+          } }
         },
         scales: {
           x: { stacked: true, ticks: { font: { size: 10 }, color: '#374151', maxRotation: 60, minRotation: 45 }, grid: { display: false } },
@@ -536,7 +564,7 @@ function buildDashboard(raw) {
         { label: 'Units (kWh)', data: slice.map(r => r.eUnitNum), borderColor: '#92400E', backgroundColor: '#92400E', yAxisID: 'y1', borderWidth: 1.5, borderDash: [4, 3], pointRadius: 2, pointHoverRadius: 4, tension: 0.3 }
       ] },
       options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, usePointStyle: true, pointStyle: 'circle', font: { size: 9 } } }, tooltip: { backgroundColor: '#111827' } },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 5, usePointStyle: true, pointStyle: 'circle', font: { size: 9 } } }, tooltip: { backgroundColor: '#111827' } },
         scales: {
           x: { ticks: { font: { size: 9 }, color: '#6B7280', maxRotation: 60, minRotation: 45 }, grid: { display: false } },
           y: { position: 'left', ticks: { font: { size: 9 }, color: '#B45309' }, grid: { color: '#EFEFF1' }, title: { display: true, text: 'THB', font: { size: 9 } } },
@@ -552,7 +580,7 @@ function buildDashboard(raw) {
         { label: 'Units', data: slice.map(r => r.wUnitNum), borderColor: '#164E63', backgroundColor: '#164E63', yAxisID: 'y1', borderWidth: 1.5, borderDash: [4, 3], pointRadius: 2, pointHoverRadius: 4, tension: 0.3 }
       ] },
       options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, usePointStyle: true, pointStyle: 'circle', font: { size: 9 } } }, tooltip: { backgroundColor: '#111827' } },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 5, usePointStyle: true, pointStyle: 'circle', font: { size: 9 } } }, tooltip: { backgroundColor: '#111827' } },
         scales: {
           x: { ticks: { font: { size: 9 }, color: '#6B7280', maxRotation: 60, minRotation: 45 }, grid: { display: false } },
           y: { position: 'left', ticks: { font: { size: 9 }, color: '#0072B2' }, grid: { color: '#EFEFF1' }, title: { display: true, text: 'THB', font: { size: 9 } } },
@@ -568,7 +596,7 @@ function buildDashboard(raw) {
         { label: 'Mobile', data: slice.map(r => r.mobile), borderColor: '#CC79A7', backgroundColor: '#CC79A7', borderWidth: 1.5, pointRadius: 2, pointHoverRadius: 4, tension: 0.3 }
       ] },
       options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, usePointStyle: true, pointStyle: 'circle', font: { size: 9 } } }, tooltip: { backgroundColor: '#111827' } },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 5, usePointStyle: true, pointStyle: 'circle', font: { size: 9 } } }, tooltip: { backgroundColor: '#111827' } },
         scales: { x: { ticks: { font: { size: 9 }, color: '#6B7280', maxRotation: 60, minRotation: 45 }, grid: { display: false } }, y: { ticks: { font: { size: 9 }, color: '#6B7280' }, grid: { color: '#EFEFF1' }, title: { display: true, text: 'THB', font: { size: 9 } } } } }
     });
   }
@@ -622,7 +650,7 @@ function buildDashboard(raw) {
       options: {
         responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
         plugins: {
-          legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true, pointStyle: 'circle', font: { size: 11 }, color: '#111827' } },
+          legend: { position: 'bottom', labels: { boxWidth: 6, usePointStyle: true, pointStyle: 'circle', font: { size: 11 }, color: '#111827' } },
           tooltip: { backgroundColor: '#111827', padding: 10, callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.parsed.y) + ' THB' } }
         },
         scales: { x: { ticks: { font: { size: 11 }, color: '#6B7280' }, grid: { display: false } }, y: { ticks: { font: { size: 11 }, color: '#6B7280' }, grid: { color: '#EFEFF1' } } }
