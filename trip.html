@@ -113,8 +113,6 @@
   .timeline-row { display: flex; gap: 14px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x proximity; }
   .trip-card {
     position: relative;
-    appearance: none; -webkit-appearance: none; -moz-appearance: none;
-    font: inherit; margin: 0; outline: none;
     will-change: transform, box-shadow;
     flex: 0 0 calc((100% - 28px) / 3); min-width: 220px; scroll-snap-align: start;
     background: #fff; border: 2px solid var(--card-accent, var(--total));
@@ -129,6 +127,7 @@
     background: var(--card-accent, var(--total));
   }
   .trip-card:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(17,24,39,0.10); }
+  .trip-card:focus-visible { outline: 2px solid var(--card-accent, var(--total)); outline-offset: 2px; }
   .trip-card .tc-name { font-size: 14px; font-weight: 700; color: var(--ink); }
   .trip-card .tc-dates { font-size: 12px; color: var(--sub); }
   .trip-card .tc-loc { font-size: 12px; color: var(--sub); }
@@ -447,8 +446,11 @@ function buildDashboard(raw) {
     const row = block.querySelector('.timeline-row');
     yearTrips.forEach((t, i) => {
       const c = timelineColors[i % timelineColors.length];
-      const btn = document.createElement('button');
+      const btn = document.createElement('div');
       btn.className = 'trip-card';
+      btn.setAttribute('role', 'button');
+      btn.setAttribute('tabindex', '0');
+      btn.setAttribute('aria-label', 'View ' + t.name);
       btn.style.setProperty('--card-accent', c);
       btn.innerHTML = `
         <div class="tc-name">${t.name}</div>
@@ -456,7 +458,9 @@ function buildDashboard(raw) {
         ${t.location ? `<div class="tc-loc">\ud83d\udccd ${t.location}</div>` : ''}
         <div class="tc-cost">${fmt(t.total)}<span>THB</span></div>
       `;
-      btn.addEventListener('click', () => { document.getElementById('tripSel').value = t.name; renderTripDetail(); document.getElementById('detail').scrollIntoView({ behavior: 'smooth' }); });
+      const goToTrip = () => { document.getElementById('tripSel').value = t.name; renderTripDetail(); document.getElementById('detail').scrollIntoView({ behavior: 'smooth' }); };
+      btn.addEventListener('click', goToTrip);
+      btn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToTrip(); } });
       row.appendChild(btn);
     });
     timelineWrap.appendChild(block);
