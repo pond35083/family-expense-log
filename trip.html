@@ -40,9 +40,21 @@
   nav.topnav a svg { width: 14px; height: 14px; flex-shrink: 0; }
   nav.topnav a:hover, nav.topnav a:focus-visible { color: #FBBF24; border-color: #FBBF24; }
 
-  .header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; padding: 24px 4px 0; }
+  .header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 24px 4px 0; }
   .header h1 { font-size: 24px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
   .header span { font-size: 13px; color: var(--sub); }
+  .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+
+  .upcoming-card { display: flex; align-items: stretch; gap: 12px; background: var(--total-light); border-radius: 14px; padding: 10px 16px; }
+  .upcoming-card.empty { background: #F3F4F6; border: 1px dashed var(--border); }
+  .upcoming-countdown { display: flex; flex-direction: column; align-items: center; justify-content: center; padding-right: 12px; border-right: 1px solid rgba(59,7,100,0.15); min-width: 46px; }
+  .upcoming-countdown .num { font-size: 22px; font-weight: 800; color: var(--total-dark); line-height: 1; }
+  .upcoming-countdown .lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--total-dark); opacity: 0.7; margin-top: 2px; }
+  .upcoming-info { display: flex; flex-direction: column; justify-content: center; gap: 2px; text-align: left; }
+  .upcoming-info .ui-name { font-size: 13px; font-weight: 700; color: var(--total-dark); }
+  .upcoming-info .ui-meta { font-size: 11px; color: var(--total-dark); opacity: 0.75; }
+  .upcoming-card.empty .upcoming-info .ui-name { color: var(--sub); }
+  .upcoming-card.empty .upcoming-info .ui-meta { color: var(--sub); }
 
   section { scroll-margin-top: 100px; }
   .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 22px; box-shadow: 0 1px 3px rgba(17,24,39,0.05); }
@@ -97,11 +109,11 @@
   .timeline-year { margin-bottom: 22px; }
   .timeline-year:last-child { margin-bottom: 0; }
   .timeline-divider { border: none; border-top: 1px solid var(--border); margin: 0 0 14px; }
-  .timeline-year-label { font-size: 20px; font-weight: 800; margin: 0 0 14px; }
+  .timeline-year-label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--sub); margin: 0 0 14px; }
   .timeline-row { display: flex; gap: 14px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x proximity; }
   .trip-card {
     flex: 0 0 calc((100% - 28px) / 3); min-width: 220px; scroll-snap-align: start;
-    background: #fff; border: 1px solid var(--border); border-left: 5px solid var(--card-accent, var(--total));
+    background: #fff; border: 1.5px solid #C4C4CC; border-left: 9px solid var(--card-accent, var(--total));
     border-radius: 12px; padding: 16px 18px; cursor: pointer; text-align: left;
     display: flex; flex-direction: column; gap: 5px; color: var(--ink);
     box-shadow: 0 1px 2px rgba(17,24,39,0.04);
@@ -155,7 +167,10 @@
 <div class="dashboard">
   <div class="header">
     <h1>Family Trip Expenses</h1>
-    <span id="rangeLabel">Loading...</span>
+    <div class="header-right">
+      <span id="rangeLabel">Loading...</span>
+      <div id="upcomingSlot"></div>
+    </div>
   </div>
   <div id="app" class="status">Fetching latest data...</div>
 </div>
@@ -295,6 +310,36 @@ function buildDashboard(raw) {
   const latestEnd = trips.reduce((max, t) => (!max || (t.end && t.end > max)) ? t.end : max, null);
   document.getElementById('rangeLabel').textContent = trips.length + " trip" + (trips.length === 1 ? '' : 's') + " tracked \u00b7 " + dateLabel(earliestStart) + " \u2013 " + dateLabel(latestEnd);
 
+  // ---- Upcoming trip widget ----
+  const todayMidnight = new Date(); todayMidnight.setHours(0,0,0,0);
+  const upcoming = trips.filter(t => t.start && t.start >= todayMidnight).sort((a, b) => a.start - b.start)[0];
+  const upcomingSlot = document.getElementById('upcomingSlot');
+  if (upcoming) {
+    const daysLeft = Math.round((upcoming.start - todayMidnight) / (1000 * 60 * 60 * 24));
+    upcomingSlot.innerHTML = `
+      <div class="upcoming-card">
+        <div class="upcoming-countdown">
+          <div class="num">${daysLeft}</div>
+          <div class="lbl">Day${daysLeft === 1 ? '' : 's'} left</div>
+        </div>
+        <div class="upcoming-info">
+          <div class="ui-name">${upcoming.name}</div>
+          <div class="ui-meta">${upcoming.location ? '\ud83d\udccd ' + upcoming.location + ' \u00b7 ' : ''}${dateLabel(upcoming.start)} \u2013 ${dateLabel(upcoming.end)}</div>
+        </div>
+      </div>`;
+  } else {
+    upcomingSlot.innerHTML = `
+      <div class="upcoming-card empty">
+        <div class="upcoming-countdown" style="border-right-color:var(--border);">
+          ${icon('suitcase', 'style="width:20px;height:20px;color:var(--sub);"')}
+        </div>
+        <div class="upcoming-info">
+          <div class="ui-name">No upcoming trip yet</div>
+          <div class="ui-meta">Add a future date to the sheet to see it here</div>
+        </div>
+      </div>`;
+  }
+
   const app = document.getElementById('app');
   app.className = 'app-flex';
   app.innerHTML = `
@@ -353,7 +398,7 @@ function buildDashboard(raw) {
         </div>
       </div>
 
-      <div>
+      <div class="card">
         <p class="section-eyebrow">Ledger</p>
         <h2 class="section-title">${icon('list')}Transactions</h2>
         <div class="table-scroll" style="margin-top:16px;"><table id="tripTable"></table></div>
@@ -468,9 +513,19 @@ function buildDashboard(raw) {
 
     const personEntries = Object.entries(trip.byPerson).filter(([,v]) => v > 0);
     if (proportionChart) proportionChart.destroy();
+    function donutGradient(ctx, color) {
+      const { chartArea } = ctx.chart;
+      if (!chartArea) return color;
+      const cx = (chartArea.left + chartArea.right) / 2, cy = (chartArea.top + chartArea.bottom) / 2;
+      const r = Math.min(chartArea.right - chartArea.left, chartArea.bottom - chartArea.top) / 2;
+      const g = ctx.chart.ctx.createRadialGradient(cx, cy, r * 0.3, cx, cy, r);
+      g.addColorStop(0, color + 'AA');
+      g.addColorStop(1, color);
+      return g;
+    }
     proportionChart = new Chart(document.getElementById('proportionChart'), {
       type: 'doughnut',
-      data: { labels: personEntries.map(e => e[0]), datasets: [{ data: personEntries.map(e => e[1]), backgroundColor: personEntries.map(e => personColor(e[0], palette)) }] },
+      data: { labels: personEntries.map(e => e[0]), datasets: [{ data: personEntries.map(e => e[1]), backgroundColor: (ctx) => donutGradient(ctx, personColor(personEntries[ctx.dataIndex] ? personEntries[ctx.dataIndex][0] : '', palette)), borderWidth: 2, borderColor: '#fff' }] },
       options: { responsive: true, maintainAspectRatio: false,
         plugins: { legend: { position: 'bottom', labels: { boxWidth: 5, boxHeight: 5, pointStyleWidth: 5, usePointStyle: true, pointStyle: 'circle', font: { size: 11 } } },
           tooltip: { backgroundColor: '#111827', callbacks: { label: ctx => ctx.label + ': ' + fmt(ctx.parsed) + ' THB' } } } }
