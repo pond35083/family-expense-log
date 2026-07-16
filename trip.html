@@ -112,12 +112,17 @@
   .timeline-year-label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--sub); margin: 0 0 14px; }
   .timeline-row { display: flex; gap: 14px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x proximity; }
   .trip-card {
+    position: relative; overflow: hidden;
     flex: 0 0 calc((100% - 28px) / 3); min-width: 220px; scroll-snap-align: start;
-    background: #fff; border: 1.5px solid var(--card-accent, var(--total)); border-left: 12px solid var(--card-accent, var(--total));
-    border-radius: 12px; padding: 16px 18px; cursor: pointer; text-align: left;
+    background: #fff; border: 2px solid var(--card-accent, var(--total));
+    border-radius: 12px; padding: 16px 18px 16px 32px; cursor: pointer; text-align: left;
     display: flex; flex-direction: column; gap: 5px; color: var(--ink);
     box-shadow: 0 1px 2px rgba(17,24,39,0.04);
     transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .trip-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 14px;
+    background: var(--card-accent, var(--total));
   }
   .trip-card:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(17,24,39,0.10); }
   .trip-card .tc-name { font-size: 14px; font-weight: 700; color: var(--ink); }
