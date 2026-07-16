@@ -16,8 +16,8 @@
     --total-dark: #3B0764;
     --total: #6D28D9;
     --total-light: #EDE9FE;
-    --accom: #6366F1; --accom-light: #E0E7FF;
-    --food: #EC4899; --food-light: #FCE7F3;
+    --accom: #92400E; --accom-light: #FDECD1;
+    --food: #52B788; --food-light: #E1F5EA;
     --transport: #06B6D4; --transport-light: #CFFAFE;
     --other: #6B7280; --other-light: #F1F1F4;
   }
@@ -68,10 +68,6 @@
   .two-col { display: flex; gap: 20px; flex-wrap: wrap; }
   .two-col > div { flex: 1; min-width: 260px; }
 
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  thead th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--sub); font-weight: 700; padding: 8px 10px; border-bottom: 2px solid var(--border); position: sticky; top: 0; background: var(--bg-card); white-space: nowrap; }
-  tbody td { padding: 9px 10px; border-bottom: 1px solid #EFEFF1; white-space: nowrap; }
-  tbody tr:hover { background: #FAFAFB; }
   .table-scroll { max-height: 340px; overflow-y: auto; overflow-x: auto; border-radius: 10px; width: 100%; max-width: 100%; }
   .num { text-align: right; font-variant-numeric: tabular-nums; }
   .cat-pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; }
@@ -97,36 +93,35 @@
   .cal-legend .ring { width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--total); display: inline-block; }
 
   /* Trip timeline (Compare section) */
+  #timelineWrap { max-height: 720px; overflow-y: auto; padding-right: 4px; }
   .timeline-year { margin-bottom: 22px; }
   .timeline-year:last-child { margin-bottom: 0; }
   .timeline-divider { border: none; border-top: 1px solid var(--border); margin: 0 0 14px; }
   .timeline-year-label { font-size: 20px; font-weight: 800; margin: 0 0 14px; }
-  .timeline-row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .timeline-row { display: flex; gap: 14px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x proximity; }
   .trip-card {
-    flex: 1 1 240px; max-width: 320px; border-radius: 16px; padding: 18px;
-    color: #fff; cursor: pointer; border: none; text-align: left;
-    display: flex; flex-direction: column; gap: 6px;
+    flex: 0 0 calc((100% - 28px) / 3); min-width: 220px; scroll-snap-align: start;
+    background: #fff; border: 1px solid var(--border); border-left: 5px solid var(--card-accent, var(--total));
+    border-radius: 12px; padding: 16px 18px; cursor: pointer; text-align: left;
+    display: flex; flex-direction: column; gap: 5px; color: var(--ink);
+    box-shadow: 0 1px 2px rgba(17,24,39,0.04);
     transition: transform 0.15s ease, box-shadow 0.15s ease;
   }
-  .trip-card:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(17,24,39,0.22); }
-  .trip-card .tc-name { font-size: 15px; font-weight: 700; }
-  .trip-card .tc-dates { font-size: 12px; opacity: 0.85; }
-  .trip-card .tc-loc { font-size: 12px; opacity: 0.85; }
-  .trip-card .tc-cost { font-size: 17px; font-weight: 800; margin-top: 6px; }
-  .trip-card .tc-cost span { font-size: 11px; font-weight: 500; opacity: 0.8; }
+  .trip-card:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(17,24,39,0.10); }
+  .trip-card .tc-name { font-size: 14px; font-weight: 700; }
+  .trip-card .tc-dates { font-size: 12px; color: var(--sub); }
+  .trip-card .tc-loc { font-size: 12px; color: var(--sub); }
+  .trip-card .tc-cost { font-size: 17px; font-weight: 800; margin-top: 6px; color: var(--card-accent, var(--total)); }
+  .trip-card .tc-cost span { font-size: 11px; font-weight: 500; color: var(--sub); }
 
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   thead th {
-    text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em;
-    color: #fff; font-weight: 700; padding: 10px 12px;
-    background: linear-gradient(90deg, #111827, #312E81);
-    position: sticky; top: 0; white-space: nowrap;
+    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;
+    color: var(--sub); font-weight: 700; padding: 9px 12px; border-bottom: 2px solid var(--border);
+    position: sticky; top: 0; background: var(--bg-card); white-space: nowrap;
   }
-  thead th:first-child { border-top-left-radius: 8px; }
-  thead th:last-child { border-top-right-radius: 8px; }
   tbody td { padding: 10px 12px; border-bottom: 1px solid #EFEFF1; white-space: nowrap; font-variant-numeric: tabular-nums; }
-  tbody tr:nth-child(even) { background: #FAFAFC; }
-  tbody tr:hover { background: #F0F0FF; }
+  tbody tr:hover { background: #FAFAFB; }
 
   .status { font-size: 13px; color: var(--sub); padding: 40px 0; text-align: center; }
 
@@ -171,14 +166,14 @@ const MONTH_MAP = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:
 const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const PERSON_COLORS = ["#6D28D9","#F59E0B","#0072B2","#009E73","#CC79A7","#0F766E","#DB2777","#4338CA","#B45309","#0E7490"];
 const FIXED_PERSON_COLORS = {
-  "P'Pond": "#DC2626",
-  "P'Banana": "#EC4899",
-  "Boom": "#1D4ED8",
-  "Beach": "#16A34A",
-  "Mom": "#0D9488",
-  "Rung": "#D97706"
+  "P'Pond": "#C0483C",
+  "P'Banana": "#C15C87",
+  "Boom": "#3E6E9E",
+  "Beach": "#4F8F5B",
+  "Mom": "#3D8B87",
+  "Rung": "#C99A3E"
 };
-const CATEGORY_COLORS = { "Accommodation": "#6366F1", "Food & Drink": "#EC4899", "Transport": "#06B6D4" };
+const CATEGORY_COLORS = { "Accommodation": "#92400E", "Food & Drink": "#52B788", "Transport": "#06B6D4" };
 
 const ICONS = {
   wallet: '<path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/><path d="M16 12h3"/><path d="M3 9h18"/>',
@@ -398,7 +393,7 @@ function buildDashboard(raw) {
       const c = timelineColors[i % timelineColors.length];
       const btn = document.createElement('button');
       btn.className = 'trip-card';
-      btn.style.background = c;
+      btn.style.setProperty('--card-accent', c);
       btn.innerHTML = `
         <div class="tc-name">${t.name}</div>
         <div class="tc-dates">${dateLabel(t.start)} \u2013 ${dateLabel(t.end)}</div>
