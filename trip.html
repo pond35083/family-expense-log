@@ -72,7 +72,7 @@
   .ban-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
   .ban-card { border-radius: 14px; padding: 16px; }
   .ban-card .ban-label { font-size: 12px; font-weight: 700; opacity: 0.85; margin-bottom: 6px; }
-  .ban-card .ban-value { font-size: 19px; font-weight: 700; }
+  .ban-card .ban-value { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums lining-nums; }
   .ban-card .ban-sub { font-size: 10px; opacity: 0.7; margin-top: 4px; }
 
   .chart-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 16px; }
@@ -120,11 +120,10 @@
     transition: transform 0.15s ease, box-shadow 0.15s ease;
   }
   .trip-card:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(17,24,39,0.10); }
-  .trip-card .tc-name { font-size: 14px; font-weight: 700; }
-  .trip-card .tc-dates { font-size: 12px; color: var(--sub); }
-  .trip-card .tc-loc { font-size: 12px; color: var(--sub); }
-  .trip-card .tc-cost { font-size: 17px; font-weight: 800; margin-top: 6px; color: var(--card-accent, var(--total)); }
-  .trip-card .tc-cost span { font-size: 11px; font-weight: 500; color: var(--sub); }
+  .trip-card .tc-name { font-size: 11.5px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: 0.04em; }
+  .trip-card .tc-cost { font-size: 27px; font-weight: 800; color: var(--ink); line-height: 1.15; margin: 5px 0 8px; font-variant-numeric: tabular-nums lining-nums; }
+  .trip-card .tc-cost span { font-size: 12px; font-weight: 600; color: var(--sub); margin-left: 3px; }
+  .trip-card .tc-meta { font-size: 11.5px; color: var(--sub); line-height: 1.6; }
 
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   thead th {
@@ -132,7 +131,7 @@
     color: var(--sub); font-weight: 700; padding: 9px 12px; border-bottom: 2px solid var(--border);
     position: sticky; top: 0; background: var(--bg-card); white-space: nowrap;
   }
-  tbody td { padding: 10px 12px; border-bottom: 1px solid #EFEFF1; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  tbody td { padding: 10px 12px; border-bottom: 1px solid #EFEFF1; white-space: nowrap; font-variant-numeric: tabular-nums lining-nums; }
   tbody tr:hover { background: #FAFAFB; }
 
   .status { font-size: 13px; color: var(--sub); padding: 40px 0; text-align: center; }
@@ -168,11 +167,11 @@
   <div class="header">
     <h1>Family Trip Expenses</h1>
     <div class="header-right">
-      <span id="rangeLabel">Loading...</span>
       <div id="upcomingSlot"></div>
     </div>
   </div>
   <div id="app" class="status">Fetching latest data...</div>
+  <p id="rangeLabel" style="text-align:center; font-size:12px; color:var(--sub); margin:8px 0 0;"></p>
 </div>
 
 <script>
@@ -441,9 +440,8 @@ function buildDashboard(raw) {
       btn.style.setProperty('--card-accent', c);
       btn.innerHTML = `
         <div class="tc-name">${t.name}</div>
-        <div class="tc-dates">${dateLabel(t.start)} \u2013 ${dateLabel(t.end)}</div>
-        ${t.location ? `<div class="tc-loc">\ud83d\udccd ${t.location}</div>` : ''}
-        <div class="tc-cost">${fmt(t.total)} <span>THB</span></div>
+        <div class="tc-cost">${fmt(t.total)}<span>THB</span></div>
+        <div class="tc-meta">${dateLabel(t.start)} \u2013 ${dateLabel(t.end)}${t.location ? ' \u00b7 \ud83d\udccd ' + t.location : ''}</div>
       `;
       btn.addEventListener('click', () => { document.getElementById('tripSel').value = t.name; renderTripDetail(); document.getElementById('detail').scrollIntoView({ behavior: 'smooth' }); });
       row.appendChild(btn);
@@ -528,7 +526,11 @@ function buildDashboard(raw) {
       data: { labels: personEntries.map(e => e[0]), datasets: [{ data: personEntries.map(e => e[1]), backgroundColor: (ctx) => donutGradient(ctx, personColor(personEntries[ctx.dataIndex] ? personEntries[ctx.dataIndex][0] : '', palette)), borderWidth: 2, borderColor: '#fff' }] },
       options: { responsive: true, maintainAspectRatio: false,
         plugins: { legend: { position: 'bottom', labels: { boxWidth: 5, boxHeight: 5, pointStyleWidth: 5, usePointStyle: true, pointStyle: 'circle', font: { size: 11 } } },
-          tooltip: { backgroundColor: '#111827', callbacks: { label: ctx => ctx.label + ': ' + fmt(ctx.parsed) + ' THB' } } } }
+          tooltip: { backgroundColor: '#111827', callbacks: { label: ctx => {
+            const total = ctx.chart.data.datasets[0].data.reduce((s, v) => s + v, 0);
+            const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : '0.0';
+            return ctx.label + ': ' + fmt(ctx.parsed) + ' THB (' + pct + '%)';
+          } } } } }
     });
 
     const catEntries = Object.entries(trip.byCategory).filter(([,v]) => v > 0).sort((a, b) => b[1] - a[1]);
@@ -545,7 +547,11 @@ function buildDashboard(raw) {
       type: 'bar',
       data: { labels: catEntries.map(e => e[0]), datasets: [{ data: catEntries.map(e => e[1]), backgroundColor: (ctx) => catGradient(ctx, categoryColor(catEntries[ctx.dataIndex] ? catEntries[ctx.dataIndex][0] : '')), borderRadius: 6 }] },
       options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-        plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111827', callbacks: { label: ctx => fmt(ctx.parsed.x) + ' THB' } } },
+        plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111827', callbacks: { label: ctx => {
+          const total = ctx.chart.data.datasets[0].data.reduce((s, v) => s + v, 0);
+          const pct = total > 0 ? ((ctx.parsed.x / total) * 100).toFixed(1) : '0.0';
+          return fmt(ctx.parsed.x) + ' THB (' + pct + '%)';
+        } } } },
         scales: { x: { ticks: { font: { size: 11 }, color: '#6B7280' }, grid: { color: '#EFEFF1' } }, y: { ticks: { font: { size: 11 }, color: '#374151' }, grid: { display: false } } } }
     });
 
