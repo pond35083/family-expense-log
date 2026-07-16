@@ -113,24 +113,18 @@
   .timeline-row { display: flex; gap: 14px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x proximity; }
   .trip-card {
     position: relative;
-    transform: translateZ(0);
-    backface-visibility: hidden;
     flex: 0 0 calc((100% - 28px) / 3); min-width: 220px; scroll-snap-align: start;
-    background: #fff;
-    border-radius: 12px; padding: 16px 18px 16px 30px; cursor: pointer; text-align: left;
+    background: #fff; border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 18px; cursor: pointer; text-align: left;
     display: flex; flex-direction: column; gap: 5px; color: var(--ink);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-  }
-  .trip-card .tc-bar {
-    position: absolute; left: 8px; top: 8px; bottom: 8px; width: 8px;
-    border-radius: 4px;
-    background: var(--total);
+    transition: background-color 0.15s ease, border-color 0.15s ease;
   }
   .trip-card:focus-visible { outline: 2px solid var(--total); outline-offset: 2px; }
-  .trip-card .tc-name { font-size: 14px; font-weight: 700; color: var(--ink); }
+  .trip-card .tc-name { font-size: 14px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 7px; }
+  .trip-card .tc-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
   .trip-card .tc-dates { font-size: 12px; color: var(--sub); }
   .trip-card .tc-loc { font-size: 12px; color: var(--sub); }
-  .trip-card .tc-cost { font-size: 18px; font-weight: 800; margin-top: 6px; color: var(--total); font-variant-numeric: tabular-nums lining-nums; }
+  .trip-card .tc-cost { font-size: 18px; font-weight: 800; margin-top: 6px; font-variant-numeric: tabular-nums lining-nums; }
   .trip-card .tc-cost span { font-size: 11px; font-weight: 500; color: var(--sub); margin-left: 3px; }
 
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -450,20 +444,16 @@ function buildDashboard(raw) {
       btn.setAttribute('role', 'button');
       btn.setAttribute('tabindex', '0');
       btn.setAttribute('aria-label', 'View ' + t.name);
-      const restShadow = '0 0 0 2px ' + c + ', 0 1px 2px rgba(17,24,39,0.04)';
-      const hoverShadow = '0 0 0 2px ' + c + ', 0 8px 18px rgba(17,24,39,0.10)';
-      btn.style.boxShadow = restShadow;
       btn.innerHTML = `
-        <div class="tc-bar"></div>
-        <div class="tc-name">${t.name}</div>
+        <div class="tc-name"><span class="tc-dot"></span>${t.name}</div>
         <div class="tc-dates">${dateLabel(t.start)} \u2013 ${dateLabel(t.end)}</div>
         ${t.location ? `<div class="tc-loc">\ud83d\udccd ${t.location}</div>` : ''}
         <div class="tc-cost">${fmt(t.total)}<span>THB</span></div>
       `;
-      btn.querySelector('.tc-bar').style.background = c;
+      btn.querySelector('.tc-dot').style.background = c;
       btn.querySelector('.tc-cost').style.color = c;
-      btn.addEventListener('mouseenter', () => { btn.style.transform = 'translateY(-2px) translateZ(0)'; btn.style.boxShadow = hoverShadow; });
-      btn.addEventListener('mouseleave', () => { btn.style.transform = 'translateZ(0)'; btn.style.boxShadow = restShadow; });
+      btn.addEventListener('mouseenter', () => { btn.style.backgroundColor = '#FAFAFF'; btn.style.borderColor = c; });
+      btn.addEventListener('mouseleave', () => { btn.style.backgroundColor = '#fff'; btn.style.borderColor = ''; });
       const goToTrip = () => { document.getElementById('tripSel').value = t.name; renderTripDetail(); document.getElementById('detail').scrollIntoView({ behavior: 'smooth' }); };
       btn.addEventListener('click', goToTrip);
       btn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToTrip(); } });
