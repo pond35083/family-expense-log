@@ -7,246 +7,92 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
-  :root {
-    --ink: #111827;
-    --sub: #6B7280;
-    --border: #D4D4D8;
-    --bg-card: #FFFFFF;
-    --bg-page: #F5F5F7;
-    --total-dark: #3B0764;
-    --total: #6D28D9;
-    --total-light: #EDE9FE;
-    --accom: #92400E; --accom-light: #FDECD1;
-    --food: #52B788; --food-light: #E1F5EA;
+:root {
+--ink: #111827;
+--sub: #6B7280;
+--border: #D4D4D8;
+--bg-card: #FFFFFF;
+--bg-page: #F5F5F7;
+--total-dark: #3B0764;
+--total: #6D28D9;
+--total-light: #EDE9FE;
+    --accom: #F59E0B; --accom-light: #FEF3C7;
+    --food: #CC79A7; --food-light: #FBE7F1;
+    --transport: #0072B2; --transport-light: #DBEAFE;
+    --accom: #6366F1; --accom-light: #E0E7FF;
+    --food: #EC4899; --food-light: #FCE7F3;
     --transport: #06B6D4; --transport-light: #CFFAFE;
-    --other: #6B7280; --other-light: #F1F1F4;
-  }
-  * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0 0 40px; background: var(--bg-page); color: var(--ink); }
-  .dashboard { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 0; padding: 0 16px; }
-  .app-flex { display: flex; flex-direction: column; gap: 26px; margin-top: 40px; }
-
-  nav.pageswitch { position: sticky; top: 0; z-index: 31; background: var(--total-dark); padding: 0 16px; }
-  nav.pageswitch .switchwrap { max-width: 1040px; margin: 0 auto; display: flex; align-items: center; gap: 6px; height: 40px; }
-  nav.pageswitch a { color: rgba(255,255,255,0.65); text-decoration: none; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px; transition: background 0.15s, color 0.15s; }
-  nav.pageswitch a svg { width: 13px; height: 13px; }
-  nav.pageswitch a.active { background: rgba(255,255,255,0.2); color: #fff; }
-  nav.pageswitch a:hover:not(.active) { color: #fff; }
-
-  nav.topnav { position: sticky; top: 40px; z-index: 30; background: var(--ink); padding: 0 16px; overflow-x: auto; white-space: nowrap; }
-  nav.topnav .navwrap { max-width: 1040px; margin: 0 auto; display: flex; gap: 4px; }
-  nav.topnav a { color: #D1D5DB; text-decoration: none; font-size: 13px; font-weight: 600; padding: 14px 12px; display: inline-flex; align-items: center; gap: 6px; border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s; }
-  nav.topnav a svg { width: 14px; height: 14px; flex-shrink: 0; }
-  nav.topnav a:hover, nav.topnav a:focus-visible { color: #FBBF24; border-color: #FBBF24; }
-
-  .header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 24px 4px 0; }
-  .header h1 { font-size: 24px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
-  .header span { font-size: 13px; color: var(--sub); }
-  .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
-
-  .upcoming-card { display: flex; align-items: stretch; gap: 12px; background: var(--total-light); border-radius: 14px; padding: 10px 16px; }
-  .upcoming-card.empty { background: #F3F4F6; border: 1px dashed var(--border); }
-  .upcoming-countdown { display: flex; flex-direction: column; align-items: center; justify-content: center; padding-right: 12px; border-right: 1px solid rgba(59,7,100,0.15); min-width: 46px; }
-  .upcoming-countdown .num { font-size: 22px; font-weight: 800; color: var(--total-dark); line-height: 1; }
-  .upcoming-countdown .lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--total-dark); opacity: 0.7; margin-top: 2px; }
-  .upcoming-info { display: flex; flex-direction: column; justify-content: center; gap: 2px; text-align: left; }
-  .upcoming-info .ui-name { font-size: 13px; font-weight: 700; color: var(--total-dark); }
-  .upcoming-info .ui-meta { font-size: 11px; color: var(--total-dark); opacity: 0.75; }
-  .upcoming-card.empty .upcoming-info .ui-name { color: var(--sub); }
-  .upcoming-card.empty .upcoming-info .ui-meta { color: var(--sub); }
-
-  section { scroll-margin-top: 100px; }
-  .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 22px; box-shadow: 0 1px 3px rgba(17,24,39,0.05); }
-  .section-eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--sub); margin: 0 0 4px; }
-  .section-title { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 700; margin: 0; }
-  .section-title svg { width: 18px; height: 18px; flex-shrink: 0; }
-
-  .filtered-zone { background: #FAFAFF; border: 1px dashed #C7C3F0; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 22px; }
-  .filtered-zone-label { font-size: 12px; font-weight: 600; color: #6D28D9; margin: 0 0 4px; }
-  .filter-bar { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
-  .filter-group { display: flex; flex-direction: column; gap: 4px; }
-  .filter-group label { font-size: 11px; font-weight: 600; color: var(--sub); text-transform: uppercase; letter-spacing: 0.03em; }
-  .filter-group select { font-family: inherit; font-size: 14px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: #FAFAFB; min-width: 180px; color: var(--ink); }
-
-  .ban-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
-  .ban-card { border-radius: 14px; padding: 16px; }
-  .ban-card .ban-label { font-size: 12px; font-weight: 700; opacity: 0.85; margin-bottom: 6px; }
-  .ban-card .ban-value { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums lining-nums; }
-  .ban-card .ban-sub { font-size: 10px; opacity: 0.7; margin-top: 4px; }
-
-  .chart-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 16px; }
-  .chart-container { height: 300px; }
-  .two-col { display: flex; gap: 20px; flex-wrap: wrap; }
-  .two-col > div { flex: 1; min-width: 260px; }
-
-  .table-scroll { max-height: 340px; overflow-y: auto; overflow-x: auto; border-radius: 10px; width: 100%; max-width: 100%; }
-  .num { text-align: right; font-variant-numeric: tabular-nums; }
-  .cat-pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; }
-
-  /* Calendar */
-  .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-  .cal-nav-btn { border: 1px solid var(--border); background: #fff; border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-  .cal-nav-btn:hover { background: #F5F5F7; }
-  .cal-month-label { font-size: 14px; font-weight: 700; }
-  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-  .cal-dow { font-size: 10px; font-weight: 700; text-align: center; color: var(--sub); padding-bottom: 4px; text-transform: uppercase; }
-  .cal-day { position: relative; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 12px; border-radius: 8px; color: var(--ink); }
-  .cal-day.empty { visibility: hidden; }
-  .cal-day.marked { background: var(--total-light); color: var(--total-dark); font-weight: 700; cursor: pointer; }
-  .cal-day.marked:hover { background: var(--total); color: #fff; }
-  .cal-day.marked::after { content: ''; position: absolute; bottom: 3px; width: 4px; height: 4px; border-radius: 50%; background: var(--total); }
-  .cal-day.marked:hover::after { background: #fff; }
+--other: #6B7280; --other-light: #F1F1F4;
+}
+* { box-sizing: border-box; }
+@@ -89,8 +89,44 @@
+.cal-day.marked:hover { background: var(--total); color: #fff; }
+.cal-day.marked::after { content: ''; position: absolute; bottom: 3px; width: 4px; height: 4px; border-radius: 50%; background: var(--total); }
+.cal-day.marked:hover::after { background: #fff; }
+  .cal-legend { font-size: 11px; color: var(--sub); margin-top: 10px; display: flex; align-items: center; gap: 6px; }
   .cal-day.today { box-shadow: inset 0 0 0 2px var(--total); font-weight: 800; }
   .cal-day.today.marked { box-shadow: inset 0 0 0 2px #fff; }
   .cal-legend { font-size: 11px; color: var(--sub); margin-top: 10px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
   .cal-legend .item { display: flex; align-items: center; gap: 6px; }
-  .cal-legend .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--total-light); border: 2px solid var(--total); display: inline-block; }
+.cal-legend .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--total-light); border: 2px solid var(--total); display: inline-block; }
   .cal-legend .ring { width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--total); display: inline-block; }
 
   /* Trip timeline (Compare section) */
-  #timelineWrap { max-height: 720px; overflow-y: auto; padding-right: 4px; }
   .timeline-year { margin-bottom: 22px; }
   .timeline-year:last-child { margin-bottom: 0; }
   .timeline-divider { border: none; border-top: 1px solid var(--border); margin: 0 0 14px; }
-  .timeline-year-label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--sub); margin: 0 0 14px; }
-  .timeline-row { display: flex; gap: 14px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x proximity; }
+  .timeline-year-label { font-size: 20px; font-weight: 800; margin: 0 0 14px; }
+  .timeline-row { display: flex; gap: 14px; flex-wrap: wrap; }
   .trip-card {
-    position: relative;
-    will-change: transform, box-shadow;
-    flex: 0 0 calc((100% - 28px) / 3); min-width: 220px; scroll-snap-align: start;
-    background: #fff; border: 2px solid var(--card-accent, var(--total));
-    border-radius: 12px; padding: 16px 18px 16px 30px; cursor: pointer; text-align: left;
-    display: flex; flex-direction: column; gap: 5px; color: var(--ink);
-    box-shadow: 0 1px 2px rgba(17,24,39,0.04);
+    flex: 1 1 240px; max-width: 320px; border-radius: 16px; padding: 18px;
+    color: #fff; cursor: pointer; border: none; text-align: left;
+    display: flex; flex-direction: column; gap: 6px;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
   }
-  .trip-card::before {
-    content: ''; position: absolute; left: 8px; top: 8px; bottom: 8px; width: 8px;
-    border-radius: 4px;
-    background: var(--card-accent, var(--total));
-  }
-  .trip-card:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(17,24,39,0.10); }
-  .trip-card:focus-visible { outline: 2px solid var(--card-accent, var(--total)); outline-offset: 2px; }
-  .trip-card .tc-name { font-size: 14px; font-weight: 700; color: var(--ink); }
-  .trip-card .tc-dates { font-size: 12px; color: var(--sub); }
-  .trip-card .tc-loc { font-size: 12px; color: var(--sub); }
-  .trip-card .tc-cost { font-size: 18px; font-weight: 800; margin-top: 6px; color: var(--card-accent, var(--total)); font-variant-numeric: tabular-nums lining-nums; }
-  .trip-card .tc-cost span { font-size: 11px; font-weight: 500; color: var(--sub); margin-left: 3px; }
+  .trip-card:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(17,24,39,0.22); }
+  .trip-card .tc-name { font-size: 15px; font-weight: 700; }
+  .trip-card .tc-dates { font-size: 12px; opacity: 0.85; }
+  .trip-card .tc-loc { font-size: 12px; opacity: 0.85; }
+  .trip-card .tc-cost { font-size: 17px; font-weight: 800; margin-top: 6px; }
+  .trip-card .tc-cost span { font-size: 11px; font-weight: 500; opacity: 0.8; }
 
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   thead th {
-    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;
-    color: var(--sub); font-weight: 700; padding: 9px 12px; border-bottom: 2px solid var(--border);
-    position: sticky; top: 0; background: var(--bg-card); white-space: nowrap;
+    text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: #fff; font-weight: 700; padding: 10px 12px;
+    background: linear-gradient(90deg, #111827, #312E81);
+    position: sticky; top: 0; white-space: nowrap;
   }
-  tbody td { padding: 10px 12px; border-bottom: 1px solid #EFEFF1; white-space: nowrap; font-variant-numeric: tabular-nums lining-nums; }
-  tbody tr:hover { background: #FAFAFB; }
+  thead th:first-child { border-top-left-radius: 8px; }
+  thead th:last-child { border-top-right-radius: 8px; }
+  tbody td { padding: 10px 12px; border-bottom: 1px solid #EFEFF1; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  tbody tr:nth-child(even) { background: #FAFAFC; }
+  tbody tr:hover { background: #F0F0FF; }
 
-  .status { font-size: 13px; color: var(--sub); padding: 40px 0; text-align: center; }
+.status { font-size: 13px; color: var(--sub); padding: 40px 0; text-align: center; }
 
-  .back-to-top { position: fixed; bottom: 20px; right: 20px; z-index: 40; width: 48px; height: 48px; border-radius: 50%; background: var(--ink); color: #fff; border: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(17,24,39,0.28); cursor: pointer; opacity: 0; pointer-events: none; transform: translateY(10px); transition: opacity 0.2s ease, transform 0.2s ease; }
-  .back-to-top.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
-  .back-to-top svg { width: 22px; height: 22px; }
-
-  @media (max-width: 700px) {
-    .two-col > div { min-width: 100%; }
-  }
-</style>
-</head>
-<body>
-
-<nav class="pageswitch">
-  <div class="switchwrap">
-    <a href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Home</a>
-    <a href="utility.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg>Utility Expense</a>
-    <a href="trip.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Trip Expense</a>
-  </div>
-</nav>
-
-<nav class="topnav">
-  <div class="navwrap" id="navwrap"></div>
-</nav>
-
-<button id="backToTop" class="back-to-top" aria-label="Back to top">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
-</button>
-
-<div class="dashboard">
-  <div class="header">
-    <div>
-      <h1>Family Trip Expenses</h1>
-      <p id="rangeLabel" style="font-size:13px; color:var(--sub); margin:4px 0 0;">Loading...</p>
-    </div>
-    <div class="header-right">
-      <div id="upcomingSlot"></div>
-    </div>
-  </div>
-  <div id="app" class="status">Fetching latest data...</div>
-</div>
-
-<script>
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5AI2tZWpEFtHFrtFJ_X0fvkqH7i6oGiVm0LDu2F8heW_7rDU7rhzVYe1bCAdjMYASgh6rpalUPTyK/pub?gid=1933853322&single=true&output=csv";
+@@ -134,7 +170,15 @@
 const MONTH_MAP = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 };
 const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const PERSON_COLORS = ["#6D28D9","#F59E0B","#0072B2","#009E73","#CC79A7","#0F766E","#DB2777","#4338CA","#B45309","#0E7490"];
+const CATEGORY_COLORS = { "Accommodation": "#F59E0B", "Food & Drink": "#CC79A7", "Transport": "#0072B2" };
 const FIXED_PERSON_COLORS = {
-  "P'Pond": "#C0483C",
-  "P'Banana": "#C15C87",
-  "Boom": "#3E6E9E",
-  "Beach": "#4F8F5B",
-  "Mom": "#3D8B87",
-  "Rung": "#C99A3E"
+  "P'Pond": "#DC2626",
+  "P'Banana": "#EC4899",
+  "Boom": "#1D4ED8",
+  "Beach": "#16A34A",
+  "Mom": "#0D9488",
+  "Rung": "#D97706"
 };
-const CATEGORY_COLORS = { "Accommodation": "#92400E", "Food & Drink": "#52B788", "Transport": "#06B6D4" };
+const CATEGORY_COLORS = { "Accommodation": "#6366F1", "Food & Drink": "#EC4899", "Transport": "#06B6D4" };
 
 const ICONS = {
-  wallet: '<path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/><path d="M16 12h3"/><path d="M3 9h18"/>',
-  suitcase: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
-  users: '<path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
-  pie: '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
-  tag: '<path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3.24L3 3v6.59a2 2 0 0 0 .59 1.41l9.58 9.58a2 2 0 0 0 2.82 0l4.6-4.6a2 2 0 0 0 0-2.82Z"/><circle cx="7.5" cy="7.5" r="1" fill="currentColor" stroke="none"/>',
-  calendar: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/>',
-  barChart: '<path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/>',
-  list: '<path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/>'
-};
-function icon(name, extra) { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" ${extra||''}>${ICONS[name]}</svg>`; }
-
-document.getElementById('navwrap').innerHTML = `
-  <a href="#overview">${icon('users')}Overview</a>
-  <a href="#compare">${icon('barChart')}Compare Trips</a>
-  <a href="#calendar">${icon('calendar')}Calendar</a>
-  <a href="#detail">${icon('suitcase')}Trip Detail</a>
-`;
-
-const backToTopBtn = document.getElementById('backToTop');
-window.addEventListener('scroll', () => backToTopBtn.classList.toggle('visible', window.scrollY > 400));
-backToTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
-
-function toNumber(val) {
-  if (val === null || val === undefined || val === "") return null;
-  const cleaned = String(val).replace(/,/g, "").trim();
-  const n = parseFloat(cleaned);
-  return isNaN(n) ? null : n;
-}
-function n0(v) { const x = toNumber(v); return x === null ? 0 : x; }
-function fmt(v) { return v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-
-function parseDateRange(str) {
-  if (!str) return { start: null, end: null };
-  const parts = String(str).split('-').map(s => s.trim());
-  function parseOne(s) {
-    const m = s.match(/(\d{1,2})\s+([A-Za-z]{3})[a-z]*\s+(\d{4})/);
-    if (!m) return null;
-    const mon = MONTH_MAP[m[2].slice(0, 3)];
-    if (mon === undefined) return null;
-    return new Date(parseInt(m[3]), mon, parseInt(m[1]));
-  }
-  const start = parseOne(parts[0]);
-  const end = parts.length > 1 ? parseOne(parts[1]) : start;
-  return { start, end: end || start };
+wallet: '<path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/><path d="M16 12h3"/><path d="M3 9h18"/>',
+@@ -183,7 +227,11 @@
+return { start, end: end || start };
 }
 function dateLabel(d) { if (!d) return ''; return d.getDate() + ' ' + MONTH_NAMES[d.getMonth()].slice(0,3) + ' ' + d.getFullYear(); }
+function personColor(name, palette) { if (!palette.has(name)) palette.set(name, PERSON_COLORS[palette.size % PERSON_COLORS.length]); return palette.get(name); }
 function personColor(name, palette) {
   if (FIXED_PERSON_COLORS[name]) return FIXED_PERSON_COLORS[name];
   if (!palette.has(name)) palette.set(name, PERSON_COLORS[palette.size % PERSON_COLORS.length]);
@@ -255,179 +101,66 @@ function personColor(name, palette) {
 function categoryColor(cat) { return CATEGORY_COLORS[cat] || '#6B7280'; }
 
 Papa.parse(CSV_URL, {
-  download: true, header: false, skipEmptyLines: false,
-  complete: function(results) {
-    try {
-      const raw = results.data;
-      const headerRowIdx = raw.findIndex(row => (row[0] || "").trim() === "Trip Name");
-      if (headerRowIdx === -1) {
-        document.getElementById('app').textContent = "Could not find a header row starting with 'Trip Name'. Check the sheet layout.";
-        return;
-      }
-      const headers = raw[headerRowIdx].map(h => (h || "").trim());
-      const dataRows = raw.slice(headerRowIdx + 1)
-        .filter(row => row.some(cell => (cell || "").trim() !== ""))
-        .map(row => { const obj = {}; headers.forEach((h, i) => { obj[h] = row[i]; }); return obj; });
-      buildDashboard(dataRows);
-    } catch (e) {
-      document.getElementById('app').textContent = "Something went wrong parsing the data: " + e.message;
-    }
-  },
-  error: function() { document.getElementById('app').textContent = "Could not load data. Check the CSV_URL is set correctly."; }
-});
-
-function buildDashboard(raw) {
-  const rows = raw
-    .filter(r => (r["Trip Name"] || "").trim() && toNumber(r["Amount (THB)"]) !== null)
-    .map(r => {
-      const { start, end } = parseDateRange(r["Trip Date"]);
-      return {
-        tripName: (r["Trip Name"] || "").trim(),
-        tripDateRaw: r["Trip Date"] || "",
-        start, end,
-        category: (r["Category"] || "").trim(),
-        description: r["Description"] || "",
-        amount: n0(r["Amount (THB)"]),
-        paidBy: (r["Paid By"] || "").trim(),
+@@ -221,6 +269,7 @@
+description: r["Description"] || "",
+amount: n0(r["Amount (THB)"]),
+paidBy: (r["Paid By"] || "").trim(),
         location: (r["Location"] || "").trim(),
-        remark: r["Remark"] || ""
-      };
-    });
-
-  if (!rows.length) { document.getElementById('app').textContent = "No rows with data found."; return; }
-
-  // Group into trips
-  const tripMap = new Map();
-  rows.forEach(r => {
+remark: r["Remark"] || ""
+};
+});
+@@ -230,10 +279,11 @@
+// Group into trips
+const tripMap = new Map();
+rows.forEach(r => {
+    if (!tripMap.has(r.tripName)) tripMap.set(r.tripName, { name: r.tripName, start: r.start, end: r.end, rows: [], total: 0, byPerson: {}, byCategory: {} });
     if (!tripMap.has(r.tripName)) tripMap.set(r.tripName, { name: r.tripName, start: r.start, end: r.end, location: '', rows: [], total: 0, byPerson: {}, byCategory: {} });
-    const t = tripMap.get(r.tripName);
-    if (r.start && (!t.start || r.start < t.start)) t.start = r.start;
-    if (r.end && (!t.end || r.end > t.end)) t.end = r.end;
+const t = tripMap.get(r.tripName);
+if (r.start && (!t.start || r.start < t.start)) t.start = r.start;
+if (r.end && (!t.end || r.end > t.end)) t.end = r.end;
     if (r.location && !t.location) t.location = r.location;
-    t.rows.push(r);
-    t.total += r.amount;
-    t.byPerson[r.paidBy] = (t.byPerson[r.paidBy] || 0) + r.amount;
-    if (r.category !== 'Trip Fund') t.byCategory[r.category] = (t.byCategory[r.category] || 0) + r.amount;
-  });
-  const trips = Array.from(tripMap.values()).sort((a, b) => (a.start || 0) - (b.start || 0));
+t.rows.push(r);
+t.total += r.amount;
+t.byPerson[r.paidBy] = (t.byPerson[r.paidBy] || 0) + r.amount;
+@@ -261,8 +311,8 @@
 
-  const allPeople = {};
-  rows.forEach(r => { allPeople[r.paidBy] = (allPeople[r.paidBy] || 0) + r.amount; });
-  const palette = new Map();
-  Object.keys(allPeople).forEach(p => personColor(p, palette));
-
-  const earliestStart = trips.reduce((min, t) => (!min || (t.start && t.start < min)) ? t.start : min, null);
-  const latestEnd = trips.reduce((max, t) => (!max || (t.end && t.end > max)) ? t.end : max, null);
-  document.getElementById('rangeLabel').textContent = trips.length + " trip" + (trips.length === 1 ? '' : 's') + " tracked \u00b7 " + dateLabel(earliestStart) + " \u2013 " + dateLabel(latestEnd);
-
-  // ---- Upcoming trip widget ----
-  const todayMidnight = new Date(); todayMidnight.setHours(0,0,0,0);
-  const upcoming = trips.filter(t => t.start && t.start >= todayMidnight).sort((a, b) => a.start - b.start)[0];
-  const upcomingSlot = document.getElementById('upcomingSlot');
-  if (upcoming) {
-    const daysLeft = Math.round((upcoming.start - todayMidnight) / (1000 * 60 * 60 * 24));
-    upcomingSlot.innerHTML = `
-      <div class="upcoming-card">
-        <div class="upcoming-countdown">
-          <div class="num">${daysLeft}</div>
-          <div class="lbl">Day${daysLeft === 1 ? '' : 's'} left</div>
-        </div>
-        <div class="upcoming-info">
-          <div class="ui-name">${upcoming.name}</div>
-          <div class="ui-meta">${upcoming.location ? '\ud83d\udccd ' + upcoming.location + ' \u00b7 ' : ''}${dateLabel(upcoming.start)} \u2013 ${dateLabel(upcoming.end)}</div>
-        </div>
-      </div>`;
-  } else {
-    upcomingSlot.innerHTML = `
-      <div class="upcoming-card empty">
-        <div class="upcoming-countdown" style="border-right-color:var(--border);">
-          ${icon('suitcase', 'style="width:20px;height:20px;color:var(--sub);"')}
-        </div>
-        <div class="upcoming-info">
-          <div class="ui-name">No upcoming trip yet</div>
-          <div class="ui-meta">Add a future date to the sheet to see it here</div>
-        </div>
-      </div>`;
-  }
-
-  const app = document.getElementById('app');
-  app.className = 'app-flex';
-  app.innerHTML = `
-    <section id="overview" class="card">
-      <p class="section-eyebrow">Accumulative</p>
-      <h2 class="section-title">${icon('users')}Contribution Overview \u2014 All Trips</h2>
-      <div class="ban-grid" id="banGrid" style="margin-top:16px;"></div>
-    </section>
-
-    <section id="compare" class="card">
-      <p class="section-eyebrow">Compare</p>
+   <section id="compare" class="card">
+     <p class="section-eyebrow">Compare</p>
+      <h2 class="section-title">${icon('barChart')}Trip Cost Comparison</h2>
+      <div class="chart-container" style="margin-top:16px;"><canvas id="compareChart"></canvas></div>
       <h2 class="section-title">${icon('barChart')}Trip Timeline</h2>
       <div id="timelineWrap" style="margin-top:18px;"></div>
-    </section>
+   </section>
 
-    <section id="calendar" class="card">
-      <p class="section-eyebrow">Timeline</p>
-      <h2 class="section-title">${icon('calendar')}Trip Calendar</h2>
-      <div style="margin-top:16px;">
-        <div class="cal-header">
-          <button class="cal-nav-btn" id="calPrev" aria-label="Previous month">\u2039</button>
-          <div class="cal-month-label" id="calLabel"></div>
-          <button class="cal-nav-btn" id="calNext" aria-label="Next month">\u203a</button>
-        </div>
-        <div class="cal-grid" id="calGrid"></div>
+   <section id="calendar" class="card">
+@@ -275,7 +325,10 @@
+         <button class="cal-nav-btn" id="calNext" aria-label="Next month">\u203a</button>
+       </div>
+       <div class="cal-grid" id="calGrid"></div>
+        <div class="cal-legend"><span class="dot"></span>Day within a recorded trip \u2014 tap to jump to it</div>
         <div class="cal-legend">
           <span class="item"><span class="dot"></span>Day within a recorded trip \u2014 tap to jump to it</span>
           <span class="item"><span class="ring"></span>Today</span>
         </div>
-      </div>
-    </section>
+     </div>
+   </section>
 
-    <div class="filtered-zone" id="detail">
-      <p class="filtered-zone-label">Trip Detail \u2014 select a trip below; only this section changes</p>
-      <div class="filter-bar">
-        <div class="filter-group"><label>Trip</label><select id="tripSel"></select></div>
-      </div>
+@@ -325,18 +378,37 @@
+     </div>`;
+});
 
-      <div>
-        <p class="section-eyebrow">Snapshot</p>
-        <h2 class="section-title">${icon('suitcase')}<span id="tripTitle"></span></h2>
-        <p style="font-size:12px;color:var(--sub);margin:4px 0 16px;" id="tripSub"></p>
-        <div class="ban-grid" id="tripBanGrid"></div>
-      </div>
-
-      <div class="two-col">
-        <div>
-          <p class="section-eyebrow">Proportion</p>
-          <h2 class="section-title">${icon('pie')}Who Contributed Most</h2>
-          <div class="chart-container" style="margin-top:16px;"><canvas id="proportionChart"></canvas></div>
-        </div>
-        <div>
-          <p class="section-eyebrow">Composition</p>
-          <h2 class="section-title">${icon('tag')}Spend by Category</h2>
-          <div class="chart-container" style="margin-top:16px;"><canvas id="categoryChart"></canvas></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <p class="section-eyebrow">Ledger</p>
-        <h2 class="section-title">${icon('list')}Transactions</h2>
-        <div class="table-scroll" style="margin-top:16px;"><table id="tripTable"></table></div>
-      </div>
-    </div>
-  `;
-
-  // ---- Accumulative BANs ----
-  const banGrid = document.getElementById('banGrid');
-  Object.entries(allPeople).sort((a, b) => b[1] - a[1]).forEach(([person, total]) => {
-    const c = personColor(person, palette);
-    banGrid.innerHTML += `
-      <div class="ban-card" style="background:${c}1A; color:${c};">
-        <div class="ban-label">${person}</div>
-        <div class="ban-value">${fmt(total)}</div>
-        <div class="ban-sub">THB across all trips</div>
-      </div>`;
-  });
-
+  // ---- Trip comparison chart ----
+  new Chart(document.getElementById('compareChart'), {
+    type: 'bar',
+    data: {
+      labels: trips.map(t => t.name),
+      datasets: [{ label: 'Total cost (THB)', data: trips.map(t => t.total), backgroundColor: trips.map((_, i) => PERSON_COLORS[i % PERSON_COLORS.length]) }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111827', callbacks: { label: ctx => fmt(ctx.parsed.x) + ' THB' } } },
+      scales: { x: { ticks: { font: { size: 11 }, color: '#6B7280' }, grid: { color: '#EFEFF1' } }, y: { ticks: { font: { size: 11 }, color: '#374151' }, grid: { display: false } } }
+    }
   // ---- Trip timeline (grouped by year, descending) ----
   const timelineColors = ["#0F766E","#4338CA","#B45309","#BE185D","#0369A1","#166534","#7C2D12"];
   const yearGroups = new Map();
@@ -446,112 +179,47 @@ function buildDashboard(raw) {
     const row = block.querySelector('.timeline-row');
     yearTrips.forEach((t, i) => {
       const c = timelineColors[i % timelineColors.length];
-      const btn = document.createElement('div');
+      const btn = document.createElement('button');
       btn.className = 'trip-card';
-      btn.setAttribute('role', 'button');
-      btn.setAttribute('tabindex', '0');
-      btn.setAttribute('aria-label', 'View ' + t.name);
-      btn.style.setProperty('--card-accent', c);
+      btn.style.background = c;
       btn.innerHTML = `
         <div class="tc-name">${t.name}</div>
         <div class="tc-dates">${dateLabel(t.start)} \u2013 ${dateLabel(t.end)}</div>
         ${t.location ? `<div class="tc-loc">\ud83d\udccd ${t.location}</div>` : ''}
-        <div class="tc-cost">${fmt(t.total)}<span>THB</span></div>
+        <div class="tc-cost">${fmt(t.total)} <span>THB</span></div>
       `;
-      const goToTrip = () => { document.getElementById('tripSel').value = t.name; renderTripDetail(); document.getElementById('detail').scrollIntoView({ behavior: 'smooth' }); };
-      btn.addEventListener('click', goToTrip);
-      btn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToTrip(); } });
+      btn.addEventListener('click', () => { document.getElementById('tripSel').value = t.name; renderTripDetail(); document.getElementById('detail').scrollIntoView({ behavior: 'smooth' }); });
       row.appendChild(btn);
     });
     timelineWrap.appendChild(block);
-  });
+});
 
-  // ---- Calendar ----
-  const markedDates = new Map();
-  trips.forEach(t => {
-    if (!t.start || !t.end) return;
-    let d = new Date(t.start);
-    while (d <= t.end) { markedDates.set(d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(), t.name); d.setDate(d.getDate() + 1); }
-  });
+// ---- Calendar ----
+@@ -346,7 +418,8 @@
+let d = new Date(t.start);
+while (d <= t.end) { markedDates.set(d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(), t.name); d.setDate(d.getDate() + 1); }
+});
+  let calCursor = trips.length ? new Date(trips[trips.length - 1].start) : new Date();
   let calCursor = new Date();
   const today = new Date();
-  function renderCalendar() {
-    const y = calCursor.getFullYear(), m = calCursor.getMonth();
-    document.getElementById('calLabel').textContent = MONTH_NAMES[m] + ' ' + y;
-    const grid = document.getElementById('calGrid');
-    grid.innerHTML = '';
-    ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(d => grid.innerHTML += `<div class="cal-dow">${d}</div>`);
-    const firstDow = new Date(y, m, 1).getDay();
-    const daysInMonth = new Date(y, m + 1, 0).getDate();
-    for (let i = 0; i < firstDow; i++) grid.innerHTML += `<div class="cal-day empty"></div>`;
-    for (let day = 1; day <= daysInMonth; day++) {
-      const key = y + '-' + m + '-' + day;
-      const tripName = markedDates.get(key);
+function renderCalendar() {
+const y = calCursor.getFullYear(), m = calCursor.getMonth();
+document.getElementById('calLabel').textContent = MONTH_NAMES[m] + ' ' + y;
+@@ -359,8 +432,9 @@
+for (let day = 1; day <= daysInMonth; day++) {
+const key = y + '-' + m + '-' + day;
+const tripName = markedDates.get(key);
       const isToday = y === today.getFullYear() && m === today.getMonth() && day === today.getDate();
-      const cell = document.createElement('div');
+const cell = document.createElement('div');
+      cell.className = 'cal-day' + (tripName ? ' marked' : '');
       cell.className = 'cal-day' + (tripName ? ' marked' : '') + (isToday ? ' today' : '');
-      cell.textContent = day;
-      if (tripName) {
-        cell.title = tripName;
-        cell.addEventListener('click', () => { document.getElementById('tripSel').value = tripName; renderTripDetail(); document.getElementById('detail').scrollIntoView({ behavior: 'smooth' }); });
-      }
-      grid.appendChild(cell);
-    }
-  }
-  document.getElementById('calPrev').addEventListener('click', () => { calCursor.setMonth(calCursor.getMonth() - 1); renderCalendar(); });
-  document.getElementById('calNext').addEventListener('click', () => { calCursor.setMonth(calCursor.getMonth() + 1); renderCalendar(); });
-  renderCalendar();
+cell.textContent = day;
+if (tripName) {
+cell.title = tripName;
+@@ -409,9 +483,17 @@
 
-  // ---- Trip Detail zone ----
-  const tripSel = document.getElementById('tripSel');
-  trips.slice().reverse().forEach(t => { tripSel.innerHTML += `<option value="${t.name}">${t.name}</option>`; });
-  tripSel.value = trips[trips.length - 1].name;
-
-  let proportionChart = null, categoryChart = null;
-  function renderTripDetail() {
-    const trip = trips.find(t => t.name === tripSel.value);
-    if (!trip) return;
-    document.getElementById('tripTitle').textContent = trip.name;
-    document.getElementById('tripSub').textContent = dateLabel(trip.start) + ' \u2013 ' + dateLabel(trip.end) + ' \u00b7 Total ' + fmt(trip.total) + ' THB';
-
-    const tripBanGrid = document.getElementById('tripBanGrid');
-    tripBanGrid.innerHTML = '';
-    Object.entries(trip.byPerson).sort((a, b) => b[1] - a[1]).forEach(([person, total]) => {
-      const c = personColor(person, palette);
-      tripBanGrid.innerHTML += `
-        <div class="ban-card" style="background:${c}1A; color:${c};">
-          <div class="ban-label">${person}</div>
-          <div class="ban-value">${fmt(total)}</div>
-          <div class="ban-sub">${trip.total !== 0 ? ((total / trip.total) * 100).toFixed(1) : '0.0'}% of trip</div>
-        </div>`;
-    });
-
-    const personEntries = Object.entries(trip.byPerson).filter(([,v]) => v > 0);
-    if (proportionChart) proportionChart.destroy();
-    function donutGradient(ctx, color) {
-      const { chartArea } = ctx.chart;
-      if (!chartArea) return color;
-      const cx = (chartArea.left + chartArea.right) / 2, cy = (chartArea.top + chartArea.bottom) / 2;
-      const r = Math.min(chartArea.right - chartArea.left, chartArea.bottom - chartArea.top) / 2;
-      const g = ctx.chart.ctx.createRadialGradient(cx, cy, r * 0.3, cx, cy, r);
-      g.addColorStop(0, color + 'AA');
-      g.addColorStop(1, color);
-      return g;
-    }
-    proportionChart = new Chart(document.getElementById('proportionChart'), {
-      type: 'doughnut',
-      data: { labels: personEntries.map(e => e[0]), datasets: [{ data: personEntries.map(e => e[1]), backgroundColor: (ctx) => donutGradient(ctx, personColor(personEntries[ctx.dataIndex] ? personEntries[ctx.dataIndex][0] : '', palette)), borderWidth: 2, borderColor: '#fff' }] },
-      options: { responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { position: 'bottom', labels: { boxWidth: 5, boxHeight: 5, pointStyleWidth: 5, usePointStyle: true, pointStyle: 'rect', font: { size: 11 } } },
-          tooltip: { backgroundColor: '#111827', callbacks: { label: ctx => {
-            const total = ctx.chart.data.datasets[0].data.reduce((s, v) => s + v, 0);
-            const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : '0.0';
-            return ctx.label + ': ' + fmt(ctx.parsed) + ' THB (' + pct + '%)';
-          } } } } }
-    });
-
-    const catEntries = Object.entries(trip.byCategory).filter(([,v]) => v > 0).sort((a, b) => b[1] - a[1]);
-    if (categoryChart) categoryChart.destroy();
+const catEntries = Object.entries(trip.byCategory).filter(([,v]) => v > 0).sort((a, b) => b[1] - a[1]);
+if (categoryChart) categoryChart.destroy();
     function catGradient(ctx, color) {
       const { chartArea } = ctx.chart;
       if (!chartArea) return color;
@@ -560,26 +228,10 @@ function buildDashboard(raw) {
       g.addColorStop(1, color);
       return g;
     }
-    categoryChart = new Chart(document.getElementById('categoryChart'), {
-      type: 'bar',
+categoryChart = new Chart(document.getElementById('categoryChart'), {
+type: 'bar',
+      data: { labels: catEntries.map(e => e[0]), datasets: [{ data: catEntries.map(e => e[1]), backgroundColor: catEntries.map(e => categoryColor(e[0])) }] },
       data: { labels: catEntries.map(e => e[0]), datasets: [{ data: catEntries.map(e => e[1]), backgroundColor: (ctx) => catGradient(ctx, categoryColor(catEntries[ctx.dataIndex] ? catEntries[ctx.dataIndex][0] : '')), borderRadius: 6 }] },
-      options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-        plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111827', callbacks: { label: ctx => {
-          const total = ctx.chart.data.datasets[0].data.reduce((s, v) => s + v, 0);
-          const pct = total > 0 ? ((ctx.parsed.x / total) * 100).toFixed(1) : '0.0';
-          return fmt(ctx.parsed.x) + ' THB (' + pct + '%)';
-        } } } },
-        scales: { x: { ticks: { font: { size: 11 }, color: '#6B7280' }, grid: { color: '#EFEFF1' } }, y: { ticks: { font: { size: 11 }, color: '#374151' }, grid: { display: false } } } }
-    });
-
-    const sortedRows = trip.rows.slice().sort((a, b) => trip.rows.indexOf(a) - trip.rows.indexOf(b));
-    document.getElementById('tripTable').innerHTML = `
-      <thead><tr><th>Category</th><th>Description</th><th>Paid By</th><th class="num">Amount (THB)</th><th>Remark</th></tr></thead>
-      <tbody>${sortedRows.map(r => `<tr><td><span class="cat-pill" style="background:${categoryColor(r.category)}22; color:${categoryColor(r.category)};">${r.category}</span></td><td>${r.description}</td><td>${r.paidBy}</td><td class="num">${fmt(r.amount)}</td><td>${r.remark || '&mdash;'}</td></tr>`).join('')}</tbody>`;
-  }
-  tripSel.addEventListener('change', renderTripDetail);
-  renderTripDetail();
-}
-</script>
-</body>
-</html>
+options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111827', callbacks: { label: ctx => fmt(ctx.parsed.x) + ' THB' } } },
+scales: { x: { ticks: { font: { size: 11 }, color: '#6B7280' }, grid: { color: '#EFEFF1' } }, y: { ticks: { font: { size: 11 }, color: '#374151' }, grid: { display: false } } } }
