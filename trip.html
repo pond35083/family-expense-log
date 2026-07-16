@@ -114,10 +114,13 @@
   .trip-card {
     position: relative;
     flex: 0 0 calc((100% - 28px) / 3); min-width: 220px; scroll-snap-align: start;
-    background: #fff; border: 1px solid var(--border);
+    background: #fff; border: 2px solid var(--total);
     border-radius: 12px; padding: 16px 18px; cursor: pointer; text-align: left;
     display: flex; flex-direction: column; gap: 5px; color: var(--ink);
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .trip-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(17,24,39,0.12); }
   }
   .trip-card:focus-visible { outline: 2px solid var(--total); outline-offset: 2px; }
   .trip-card .tc-name { font-size: 14px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 7px; }
@@ -444,6 +447,7 @@ function buildDashboard(raw) {
       btn.setAttribute('role', 'button');
       btn.setAttribute('tabindex', '0');
       btn.setAttribute('aria-label', 'View ' + t.name);
+      btn.style.borderColor = c;
       btn.innerHTML = `
         <div class="tc-name"><span class="tc-dot"></span>${t.name}</div>
         <div class="tc-dates">${dateLabel(t.start)} \u2013 ${dateLabel(t.end)}</div>
@@ -452,8 +456,6 @@ function buildDashboard(raw) {
       `;
       btn.querySelector('.tc-dot').style.background = c;
       btn.querySelector('.tc-cost').style.color = c;
-      btn.addEventListener('mouseenter', () => { btn.style.backgroundColor = '#FAFAFF'; btn.style.borderColor = c; });
-      btn.addEventListener('mouseleave', () => { btn.style.backgroundColor = '#fff'; btn.style.borderColor = ''; });
       const goToTrip = () => { document.getElementById('tripSel').value = t.name; renderTripDetail(); document.getElementById('detail').scrollIntoView({ behavior: 'smooth' }); };
       btn.addEventListener('click', goToTrip);
       btn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToTrip(); } });
