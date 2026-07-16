@@ -16,9 +16,9 @@
     --total-dark: #3B0764;
     --total: #6D28D9;
     --total-light: #EDE9FE;
-    --accom: #F59E0B; --accom-light: #FEF3C7;
-    --food: #CC79A7; --food-light: #FBE7F1;
-    --transport: #0072B2; --transport-light: #DBEAFE;
+    --accom: #6366F1; --accom-light: #E0E7FF;
+    --food: #EC4899; --food-light: #FCE7F3;
+    --transport: #06B6D4; --transport-light: #CFFAFE;
     --other: #6B7280; --other-light: #F1F1F4;
   }
   * { box-sizing: border-box; }
@@ -89,8 +89,44 @@
   .cal-day.marked:hover { background: var(--total); color: #fff; }
   .cal-day.marked::after { content: ''; position: absolute; bottom: 3px; width: 4px; height: 4px; border-radius: 50%; background: var(--total); }
   .cal-day.marked:hover::after { background: #fff; }
-  .cal-legend { font-size: 11px; color: var(--sub); margin-top: 10px; display: flex; align-items: center; gap: 6px; }
+  .cal-day.today { box-shadow: inset 0 0 0 2px var(--total); font-weight: 800; }
+  .cal-day.today.marked { box-shadow: inset 0 0 0 2px #fff; }
+  .cal-legend { font-size: 11px; color: var(--sub); margin-top: 10px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .cal-legend .item { display: flex; align-items: center; gap: 6px; }
   .cal-legend .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--total-light); border: 2px solid var(--total); display: inline-block; }
+  .cal-legend .ring { width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--total); display: inline-block; }
+
+  /* Trip timeline (Compare section) */
+  .timeline-year { margin-bottom: 22px; }
+  .timeline-year:last-child { margin-bottom: 0; }
+  .timeline-divider { border: none; border-top: 1px solid var(--border); margin: 0 0 14px; }
+  .timeline-year-label { font-size: 20px; font-weight: 800; margin: 0 0 14px; }
+  .timeline-row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .trip-card {
+    flex: 1 1 240px; max-width: 320px; border-radius: 16px; padding: 18px;
+    color: #fff; cursor: pointer; border: none; text-align: left;
+    display: flex; flex-direction: column; gap: 6px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .trip-card:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(17,24,39,0.22); }
+  .trip-card .tc-name { font-size: 15px; font-weight: 700; }
+  .trip-card .tc-dates { font-size: 12px; opacity: 0.85; }
+  .trip-card .tc-loc { font-size: 12px; opacity: 0.85; }
+  .trip-card .tc-cost { font-size: 17px; font-weight: 800; margin-top: 6px; }
+  .trip-card .tc-cost span { font-size: 11px; font-weight: 500; opacity: 0.8; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: #fff; font-weight: 700; padding: 10px 12px;
+    background: linear-gradient(90deg, #111827, #312E81);
+    position: sticky; top: 0; white-space: nowrap;
+  }
+  thead th:first-child { border-top-left-radius: 8px; }
+  thead th:last-child { border-top-right-radius: 8px; }
+  tbody td { padding: 10px 12px; border-bottom: 1px solid #EFEFF1; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  tbody tr:nth-child(even) { background: #FAFAFC; }
+  tbody tr:hover { background: #F0F0FF; }
 
   .status { font-size: 13px; color: var(--sub); padding: 40px 0; text-align: center; }
 
@@ -134,7 +170,15 @@ const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5AI2tZWpEFtHF
 const MONTH_MAP = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 };
 const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const PERSON_COLORS = ["#6D28D9","#F59E0B","#0072B2","#009E73","#CC79A7","#0F766E","#DB2777","#4338CA","#B45309","#0E7490"];
-const CATEGORY_COLORS = { "Accommodation": "#F59E0B", "Food & Drink": "#CC79A7", "Transport": "#0072B2" };
+const FIXED_PERSON_COLORS = {
+  "P'Pond": "#DC2626",
+  "P'Banana": "#EC4899",
+  "Boom": "#1D4ED8",
+  "Beach": "#16A34A",
+  "Mom": "#0D9488",
+  "Rung": "#D97706"
+};
+const CATEGORY_COLORS = { "Accommodation": "#6366F1", "Food & Drink": "#EC4899", "Transport": "#06B6D4" };
 
 const ICONS = {
   wallet: '<path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/><path d="M16 12h3"/><path d="M3 9h18"/>',
@@ -183,7 +227,11 @@ function parseDateRange(str) {
   return { start, end: end || start };
 }
 function dateLabel(d) { if (!d) return ''; return d.getDate() + ' ' + MONTH_NAMES[d.getMonth()].slice(0,3) + ' ' + d.getFullYear(); }
-function personColor(name, palette) { if (!palette.has(name)) palette.set(name, PERSON_COLORS[palette.size % PERSON_COLORS.length]); return palette.get(name); }
+function personColor(name, palette) {
+  if (FIXED_PERSON_COLORS[name]) return FIXED_PERSON_COLORS[name];
+  if (!palette.has(name)) palette.set(name, PERSON_COLORS[palette.size % PERSON_COLORS.length]);
+  return palette.get(name);
+}
 function categoryColor(cat) { return CATEGORY_COLORS[cat] || '#6B7280'; }
 
 Papa.parse(CSV_URL, {
@@ -221,6 +269,7 @@ function buildDashboard(raw) {
         description: r["Description"] || "",
         amount: n0(r["Amount (THB)"]),
         paidBy: (r["Paid By"] || "").trim(),
+        location: (r["Location"] || "").trim(),
         remark: r["Remark"] || ""
       };
     });
@@ -230,10 +279,11 @@ function buildDashboard(raw) {
   // Group into trips
   const tripMap = new Map();
   rows.forEach(r => {
-    if (!tripMap.has(r.tripName)) tripMap.set(r.tripName, { name: r.tripName, start: r.start, end: r.end, rows: [], total: 0, byPerson: {}, byCategory: {} });
+    if (!tripMap.has(r.tripName)) tripMap.set(r.tripName, { name: r.tripName, start: r.start, end: r.end, location: '', rows: [], total: 0, byPerson: {}, byCategory: {} });
     const t = tripMap.get(r.tripName);
     if (r.start && (!t.start || r.start < t.start)) t.start = r.start;
     if (r.end && (!t.end || r.end > t.end)) t.end = r.end;
+    if (r.location && !t.location) t.location = r.location;
     t.rows.push(r);
     t.total += r.amount;
     t.byPerson[r.paidBy] = (t.byPerson[r.paidBy] || 0) + r.amount;
@@ -261,8 +311,8 @@ function buildDashboard(raw) {
 
     <section id="compare" class="card">
       <p class="section-eyebrow">Compare</p>
-      <h2 class="section-title">${icon('barChart')}Trip Cost Comparison</h2>
-      <div class="chart-container" style="margin-top:16px;"><canvas id="compareChart"></canvas></div>
+      <h2 class="section-title">${icon('barChart')}Trip Timeline</h2>
+      <div id="timelineWrap" style="margin-top:18px;"></div>
     </section>
 
     <section id="calendar" class="card">
@@ -275,7 +325,10 @@ function buildDashboard(raw) {
           <button class="cal-nav-btn" id="calNext" aria-label="Next month">\u203a</button>
         </div>
         <div class="cal-grid" id="calGrid"></div>
-        <div class="cal-legend"><span class="dot"></span>Day within a recorded trip \u2014 tap to jump to it</div>
+        <div class="cal-legend">
+          <span class="item"><span class="dot"></span>Day within a recorded trip \u2014 tap to jump to it</span>
+          <span class="item"><span class="ring"></span>Today</span>
+        </div>
       </div>
     </section>
 
@@ -325,18 +378,37 @@ function buildDashboard(raw) {
       </div>`;
   });
 
-  // ---- Trip comparison chart ----
-  new Chart(document.getElementById('compareChart'), {
-    type: 'bar',
-    data: {
-      labels: trips.map(t => t.name),
-      datasets: [{ label: 'Total cost (THB)', data: trips.map(t => t.total), backgroundColor: trips.map((_, i) => PERSON_COLORS[i % PERSON_COLORS.length]) }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111827', callbacks: { label: ctx => fmt(ctx.parsed.x) + ' THB' } } },
-      scales: { x: { ticks: { font: { size: 11 }, color: '#6B7280' }, grid: { color: '#EFEFF1' } }, y: { ticks: { font: { size: 11 }, color: '#374151' }, grid: { display: false } } }
-    }
+  // ---- Trip timeline (grouped by year, descending) ----
+  const timelineColors = ["#0F766E","#4338CA","#B45309","#BE185D","#0369A1","#166534","#7C2D12"];
+  const yearGroups = new Map();
+  trips.forEach(t => {
+    const y = t.start ? t.start.getFullYear() : 'Unknown';
+    if (!yearGroups.has(y)) yearGroups.set(y, []);
+    yearGroups.get(y).push(t);
+  });
+  const sortedYears = Array.from(yearGroups.keys()).sort((a, b) => b - a);
+  const timelineWrap = document.getElementById('timelineWrap');
+  sortedYears.forEach(year => {
+    const yearTrips = yearGroups.get(year).slice().sort((a, b) => (b.start || 0) - (a.start || 0));
+    const block = document.createElement('div');
+    block.className = 'timeline-year';
+    block.innerHTML = `<hr class="timeline-divider"><div class="timeline-year-label">${year}</div><div class="timeline-row"></div>`;
+    const row = block.querySelector('.timeline-row');
+    yearTrips.forEach((t, i) => {
+      const c = timelineColors[i % timelineColors.length];
+      const btn = document.createElement('button');
+      btn.className = 'trip-card';
+      btn.style.background = c;
+      btn.innerHTML = `
+        <div class="tc-name">${t.name}</div>
+        <div class="tc-dates">${dateLabel(t.start)} \u2013 ${dateLabel(t.end)}</div>
+        ${t.location ? `<div class="tc-loc">\ud83d\udccd ${t.location}</div>` : ''}
+        <div class="tc-cost">${fmt(t.total)} <span>THB</span></div>
+      `;
+      btn.addEventListener('click', () => { document.getElementById('tripSel').value = t.name; renderTripDetail(); document.getElementById('detail').scrollIntoView({ behavior: 'smooth' }); });
+      row.appendChild(btn);
+    });
+    timelineWrap.appendChild(block);
   });
 
   // ---- Calendar ----
@@ -346,7 +418,8 @@ function buildDashboard(raw) {
     let d = new Date(t.start);
     while (d <= t.end) { markedDates.set(d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(), t.name); d.setDate(d.getDate() + 1); }
   });
-  let calCursor = trips.length ? new Date(trips[trips.length - 1].start) : new Date();
+  let calCursor = new Date();
+  const today = new Date();
   function renderCalendar() {
     const y = calCursor.getFullYear(), m = calCursor.getMonth();
     document.getElementById('calLabel').textContent = MONTH_NAMES[m] + ' ' + y;
@@ -359,8 +432,9 @@ function buildDashboard(raw) {
     for (let day = 1; day <= daysInMonth; day++) {
       const key = y + '-' + m + '-' + day;
       const tripName = markedDates.get(key);
+      const isToday = y === today.getFullYear() && m === today.getMonth() && day === today.getDate();
       const cell = document.createElement('div');
-      cell.className = 'cal-day' + (tripName ? ' marked' : '');
+      cell.className = 'cal-day' + (tripName ? ' marked' : '') + (isToday ? ' today' : '');
       cell.textContent = day;
       if (tripName) {
         cell.title = tripName;
@@ -409,9 +483,17 @@ function buildDashboard(raw) {
 
     const catEntries = Object.entries(trip.byCategory).filter(([,v]) => v > 0).sort((a, b) => b[1] - a[1]);
     if (categoryChart) categoryChart.destroy();
+    function catGradient(ctx, color) {
+      const { chartArea } = ctx.chart;
+      if (!chartArea) return color;
+      const g = ctx.chart.ctx.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
+      g.addColorStop(0, color + 'AA');
+      g.addColorStop(1, color);
+      return g;
+    }
     categoryChart = new Chart(document.getElementById('categoryChart'), {
       type: 'bar',
-      data: { labels: catEntries.map(e => e[0]), datasets: [{ data: catEntries.map(e => e[1]), backgroundColor: catEntries.map(e => categoryColor(e[0])) }] },
+      data: { labels: catEntries.map(e => e[0]), datasets: [{ data: catEntries.map(e => e[1]), backgroundColor: (ctx) => catGradient(ctx, categoryColor(catEntries[ctx.dataIndex] ? catEntries[ctx.dataIndex][0] : '')), borderRadius: 6 }] },
       options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y',
         plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111827', callbacks: { label: ctx => fmt(ctx.parsed.x) + ' THB' } } },
         scales: { x: { ticks: { font: { size: 11 }, color: '#6B7280' }, grid: { color: '#EFEFF1' } }, y: { ticks: { font: { size: 11 }, color: '#374151' }, grid: { display: false } } } }
