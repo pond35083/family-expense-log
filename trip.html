@@ -70,10 +70,27 @@
   .filter-group select { font-family: inherit; font-size: 14px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: #FAFAFB; min-width: 180px; color: var(--ink); }
 
   .ban-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
-  .ban-card { border-radius: 14px; padding: 16px; }
+  .ban-card { border-radius: 14px; padding: 16px; transition: box-shadow 0.15s ease, transform 0.15s ease; }
+  .ban-card.clickable { cursor: pointer; }
+  .ban-card.clickable:hover { transform: translateY(-1px); }
+  .ban-card.selected { box-shadow: inset 0 0 0 2px currentColor; }
+  .ban-card.dimmed { opacity: 0.45; }
   .ban-card .ban-label { font-size: 12px; font-weight: 700; opacity: 0.85; margin-bottom: 6px; }
   .ban-card .ban-value { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums lining-nums; }
   .ban-card .ban-sub { font-size: 10px; opacity: 0.7; margin-top: 4px; }
+
+  #personFilterBadge:empty { display: none; }
+  .filter-badge { display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; background: var(--total-light); color: var(--total-dark); font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 999px; }
+  .filter-badge button { border: none; background: rgba(59,7,100,0.12); color: var(--total-dark); border-radius: 50%; width: 18px; height: 18px; cursor: pointer; font-size: 12px; line-height: 1; }
+
+  .chart-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin-top: 14px; }
+  .chart-legend .legend-item { display: flex; align-items: center; gap: 9px; font-size: 12px; color: var(--ink); }
+  .chart-legend .legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  thead th.sortable { cursor: pointer; user-select: none; }
+  thead th.sortable:hover { color: var(--ink); }
+  thead th .sort-arrow { margin-left: 4px; opacity: 0.5; font-size: 9px; }
+  thead th.sort-active .sort-arrow { opacity: 1; color: var(--total); }
 
   .chart-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 16px; }
   .chart-container { height: 300px; }
@@ -194,7 +211,7 @@ const FIXED_PERSON_COLORS = {
   "Mom": "#3D8B87",
   "Rung": "#C99A3E"
 };
-const CATEGORY_COLORS = { "Accommodation": "#92400E", "Food & Drink": "#52B788", "Transport": "#06B6D4" };
+const CATEGORY_COLORS = { "Accommodation": "#92400E", "Food & Drink": "#52B788", "Transport": "#06B6D4", "Activity": "#C9962C" };
 
 const ICONS = {
   wallet: '<path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/><path d="M16 12h3"/><path d="M3 9h18"/>',
@@ -389,6 +406,7 @@ function buildDashboard(raw) {
         <h2 class="section-title">${icon('suitcase')}<span id="tripTitle"></span></h2>
         <p style="font-size:12px;color:var(--sub);margin:4px 0 16px;" id="tripSub"></p>
         <div class="ban-grid" id="tripBanGrid"></div>
+        <div id="personFilterBadge"></div>
       </div>
 
       <div class="two-col">
@@ -396,6 +414,7 @@ function buildDashboard(raw) {
           <p class="section-eyebrow">Proportion</p>
           <h2 class="section-title">${icon('pie')}Who Contributed Most</h2>
           <div class="chart-container" style="margin-top:16px;"><canvas id="proportionChart"></canvas></div>
+          <div class="chart-legend" id="proportionLegend"></div>
         </div>
         <div>
           <p class="section-eyebrow">Composition</p>
@@ -506,23 +525,50 @@ function buildDashboard(raw) {
   tripSel.value = trips[trips.length - 1].name;
 
   let proportionChart = null, categoryChart = null;
+  let selectedPerson = null;
+  let sortState = { key: null, dir: 1 };
+
   function renderTripDetail() {
     const trip = trips.find(t => t.name === tripSel.value);
     if (!trip) return;
+    selectedPerson = null;
+    sortState = { key: null, dir: 1 };
     document.getElementById('tripTitle').textContent = trip.name;
     document.getElementById('tripSub').textContent = dateLabel(trip.start) + ' \u2013 ' + dateLabel(trip.end) + ' \u00b7 Total ' + fmt(trip.total) + ' THB';
 
-    const tripBanGrid = document.getElementById('tripBanGrid');
-    tripBanGrid.innerHTML = '';
-    Object.entries(trip.byPerson).sort((a, b) => b[1] - a[1]).forEach(([person, total]) => {
-      const c = personColor(person, palette);
-      tripBanGrid.innerHTML += `
-        <div class="ban-card" style="background:${c}1A; color:${c};">
+    function renderBans() {
+      const tripBanGrid = document.getElementById('tripBanGrid');
+      tripBanGrid.innerHTML = '';
+      Object.entries(trip.byPerson).sort((a, b) => b[1] - a[1]).forEach(([person, total]) => {
+        const c = personColor(person, palette);
+        const isSelected = selectedPerson === person;
+        const isDimmed = selectedPerson && !isSelected;
+        const card = document.createElement('div');
+        card.className = 'ban-card clickable' + (isSelected ? ' selected' : '') + (isDimmed ? ' dimmed' : '');
+        card.style.background = c + '1A';
+        card.style.color = c;
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+        card.innerHTML = `
           <div class="ban-label">${person}</div>
           <div class="ban-value">${fmt(total)}</div>
-          <div class="ban-sub">${trip.total !== 0 ? ((total / trip.total) * 100).toFixed(1) : '0.0'}% of trip</div>
-        </div>`;
-    });
+          <div class="ban-sub">${trip.total !== 0 ? ((total / trip.total) * 100).toFixed(1) : '0.0'}% of trip</div>`;
+        const toggle = () => { selectedPerson = (selectedPerson === person) ? null : person; renderBans(); renderFilterBadge(); renderFilteredViews(); };
+        card.addEventListener('click', toggle);
+        card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+        tripBanGrid.appendChild(card);
+      });
+    }
+
+    function renderFilterBadge() {
+      const badge = document.getElementById('personFilterBadge');
+      if (!selectedPerson) { badge.innerHTML = ''; return; }
+      badge.innerHTML = `<span class="filter-badge">Showing only ${selectedPerson}'s spending <button aria-label="Clear filter">\u2715</button></span>`;
+      badge.querySelector('button').addEventListener('click', () => { selectedPerson = null; renderBans(); renderFilterBadge(); renderFilteredViews(); });
+    }
+
+    renderBans();
+    renderFilterBadge();
 
     const personEntries = Object.entries(trip.byPerson).filter(([,v]) => v > 0);
     if (proportionChart) proportionChart.destroy();
@@ -538,42 +584,98 @@ function buildDashboard(raw) {
     }
     proportionChart = new Chart(document.getElementById('proportionChart'), {
       type: 'doughnut',
-      data: { labels: personEntries.map(e => e[0]), datasets: [{ data: personEntries.map(e => e[1]), backgroundColor: (ctx) => donutGradient(ctx, personColor(personEntries[ctx.dataIndex] ? personEntries[ctx.dataIndex][0] : '', palette)), borderWidth: 2, borderColor: '#fff' }] },
+      data: { labels: personEntries.map(e => e[0]), datasets: [{ data: personEntries.map(e => e[1]), backgroundColor: (ctx) => donutGradient(ctx, personColor(personEntries[ctx.dataIndex] ? personEntries[ctx.dataIndex][0] : '', palette)), borderWidth: 0 }] },
       options: { responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { position: 'bottom', labels: { boxWidth: 5, boxHeight: 5, pointStyleWidth: 5, usePointStyle: true, pointStyle: 'rect', font: { size: 11 } } },
-          tooltip: { backgroundColor: '#111827', callbacks: { label: ctx => {
-            const total = ctx.chart.data.datasets[0].data.reduce((s, v) => s + v, 0);
-            const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : '0.0';
-            return ctx.label + ': ' + fmt(ctx.parsed) + ' THB (' + pct + '%)';
-          } } } } }
+        plugins: { legend: { display: false },
+          tooltip: { backgroundColor: '#111827', callbacks: {
+            labelColor: ctx => { const col = personColor(personEntries[ctx.dataIndex][0], palette); return { backgroundColor: col, borderColor: col, borderWidth: 0 }; },
+            label: ctx => {
+              const total = ctx.chart.data.datasets[0].data.reduce((s, v) => s + v, 0);
+              const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : '0.0';
+              return ctx.label + ': ' + fmt(ctx.parsed) + ' THB (' + pct + '%)';
+            }
+          } } } }
     });
 
-    const catEntries = Object.entries(trip.byCategory).filter(([,v]) => v > 0).sort((a, b) => b[1] - a[1]);
-    if (categoryChart) categoryChart.destroy();
-    function catGradient(ctx, color) {
-      const { chartArea } = ctx.chart;
-      if (!chartArea) return color;
-      const g = ctx.chart.ctx.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
-      g.addColorStop(0, color + 'AA');
-      g.addColorStop(1, color);
-      return g;
+    const legendEl = document.getElementById('proportionLegend');
+    legendEl.innerHTML = personEntries.map(([name]) => {
+      const c = personColor(name, palette);
+      return `<span class="legend-item"><span class="legend-swatch" style="background:${c};"></span>${name}</span>`;
+    }).join('');
+
+    function renderFilteredViews() {
+      const filteredRows = selectedPerson ? trip.rows.filter(r => r.paidBy === selectedPerson) : trip.rows;
+
+      const catTotals = {};
+      filteredRows.forEach(r => { if (r.category !== 'Trip Fund') catTotals[r.category] = (catTotals[r.category] || 0) + r.amount; });
+      const catEntries = Object.entries(catTotals).filter(([,v]) => v > 0).sort((a, b) => b[1] - a[1]);
+
+      if (categoryChart) categoryChart.destroy();
+      function catGradient(ctx, color) {
+        const { chartArea } = ctx.chart;
+        if (!chartArea) return color;
+        const g = ctx.chart.ctx.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
+        g.addColorStop(0, color + 'AA');
+        g.addColorStop(1, color);
+        return g;
+      }
+      categoryChart = new Chart(document.getElementById('categoryChart'), {
+        type: 'bar',
+        data: { labels: catEntries.map(e => e[0]), datasets: [{ data: catEntries.map(e => e[1]), backgroundColor: (ctx) => catGradient(ctx, categoryColor(catEntries[ctx.dataIndex] ? catEntries[ctx.dataIndex][0] : '')), borderRadius: 6 }] },
+        options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+          plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111827', callbacks: {
+            labelColor: ctx => { const col = categoryColor(catEntries[ctx.dataIndex][0]); return { backgroundColor: col, borderColor: col, borderWidth: 0 }; },
+            label: ctx => {
+              const total = ctx.chart.data.datasets[0].data.reduce((s, v) => s + v, 0);
+              const pct = total > 0 ? ((ctx.parsed.x / total) * 100).toFixed(1) : '0.0';
+              return fmt(ctx.parsed.x) + ' THB (' + pct + '%)';
+            }
+          } } },
+          scales: { x: { ticks: { font: { size: 11 }, color: '#6B7280' }, grid: { color: '#EFEFF1' } }, y: { ticks: { font: { size: 11 }, color: '#374151' }, grid: { display: false } } } }
+      });
+
+      renderTable(filteredRows);
     }
-    categoryChart = new Chart(document.getElementById('categoryChart'), {
-      type: 'bar',
-      data: { labels: catEntries.map(e => e[0]), datasets: [{ data: catEntries.map(e => e[1]), backgroundColor: (ctx) => catGradient(ctx, categoryColor(catEntries[ctx.dataIndex] ? catEntries[ctx.dataIndex][0] : '')), borderRadius: 6 }] },
-      options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-        plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111827', callbacks: { label: ctx => {
-          const total = ctx.chart.data.datasets[0].data.reduce((s, v) => s + v, 0);
-          const pct = total > 0 ? ((ctx.parsed.x / total) * 100).toFixed(1) : '0.0';
-          return fmt(ctx.parsed.x) + ' THB (' + pct + '%)';
-        } } } },
-        scales: { x: { ticks: { font: { size: 11 }, color: '#6B7280' }, grid: { color: '#EFEFF1' } }, y: { ticks: { font: { size: 11 }, color: '#374151' }, grid: { display: false } } } }
-    });
 
-    const sortedRows = trip.rows.slice().sort((a, b) => trip.rows.indexOf(a) - trip.rows.indexOf(b));
-    document.getElementById('tripTable').innerHTML = `
-      <thead><tr><th>Category</th><th>Description</th><th>Paid By</th><th class="num">Amount (THB)</th><th>Remark</th></tr></thead>
-      <tbody>${sortedRows.map(r => `<tr><td><span class="cat-pill" style="background:${categoryColor(r.category)}22; color:${categoryColor(r.category)};">${r.category}</span></td><td>${r.description}</td><td>${r.paidBy}</td><td class="num">${fmt(r.amount)}</td><td>${r.remark || '&mdash;'}</td></tr>`).join('')}</tbody>`;
+    const SORT_ACCESSORS = {
+      category: r => r.category, description: r => r.description.toLowerCase(),
+      paidBy: r => r.paidBy, amount: r => r.amount, remark: r => (r.remark || '').toLowerCase()
+    };
+    const COLS = [
+      { key: 'category', label: 'Category' }, { key: 'description', label: 'Description' },
+      { key: 'paidBy', label: 'Paid By' }, { key: 'amount', label: 'Amount (THB)', num: true }, { key: 'remark', label: 'Remark' }
+    ];
+
+    function renderTable(rows) {
+      let displayRows = rows.slice();
+      if (sortState.key) {
+        const acc = SORT_ACCESSORS[sortState.key];
+        displayRows.sort((a, b) => {
+          const av = acc(a), bv = acc(b);
+          if (av < bv) return -1 * sortState.dir;
+          if (av > bv) return 1 * sortState.dir;
+          return 0;
+        });
+      }
+      const theadHtml = '<tr>' + COLS.map(col => {
+        const active = sortState.key === col.key;
+        const arrow = active ? (sortState.dir === 1 ? '\u25B2' : '\u25BC') : '\u25B4';
+        return `<th class="sortable${active ? ' sort-active' : ''}${col.num ? ' num' : ''}" data-key="${col.key}">${col.label}<span class="sort-arrow">${arrow}</span></th>`;
+      }).join('') + '</tr>';
+      document.getElementById('tripTable').innerHTML = `
+        <thead>${theadHtml}</thead>
+        <tbody>${displayRows.map(r => `<tr><td><span class="cat-pill" style="background:${categoryColor(r.category)}22; color:${categoryColor(r.category)};">${r.category}</span></td><td>${r.description}</td><td>${r.paidBy}</td><td class="num">${fmt(r.amount)}</td><td>${r.remark || '&mdash;'}</td></tr>`).join('')}</tbody>`;
+      document.querySelectorAll('#tripTable th.sortable').forEach(th => {
+        th.addEventListener('click', () => {
+          const key = th.dataset.key;
+          sortState.dir = (sortState.key === key) ? -sortState.dir : 1;
+          sortState.key = key;
+          renderTable(rows);
+        });
+      });
+    }
+
+    renderFilteredViews();
   }
   tripSel.addEventListener('change', renderTripDetail);
   renderTripDetail();
