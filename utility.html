@@ -130,6 +130,9 @@
   .t-true { background: var(--true-light); color: #134E4A; }
   .chart-container { height: 320px; }
   .chart-container.small { height: 260px; }
+  .chart-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin-top: 10px; }
+  .chart-legend .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink); }
+  .chart-legend .legend-swatch { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
 
   /* YoY controls */
   .yoy-controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-bottom: 16px; }
@@ -227,6 +230,11 @@ const ICONS = {
 };
 function icon(name, extra) {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" ${extra||''}>${ICONS[name]}</svg>`;
+}
+function buildLegend(containerId, items) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = items.map(it => `<span class="legend-item"><span class="legend-swatch" style="background:${it.color};"></span>${it.label}</span>`).join('');
 }
 
 function toNumber(val) {
@@ -354,6 +362,7 @@ function buildDashboard(raw) {
         <div class="filter-group"><label>To Year</label><select id="yoyToYear"></select></div>
       </div>
       <div class="chart-container"><canvas id="yoyChart"></canvas></div>
+      <div class="chart-legend" id="yoyLegend"></div>
     </section>
 
     <div class="filtered-zone">
@@ -387,7 +396,7 @@ function buildDashboard(raw) {
       <section id="electricity" class="card">
         <p class="table-title">${icon('bolt', 'style="color:var(--electricity)"')}Electricity</p>
         <div class="table-split">
-          <div class="chart-pane"><div class="chart-container small"><canvas id="miniElectricity"></canvas></div></div>
+          <div class="chart-pane"><div class="chart-container small"><canvas id="miniElectricity"></canvas></div><div class="chart-legend" id="miniElectricityLegend"></div></div>
           <div class="table-pane"><div class="table-scroll"><table id="tblElectricity"></table></div></div>
         </div>
       </section>
@@ -395,7 +404,7 @@ function buildDashboard(raw) {
       <section id="water" class="card">
         <p class="table-title">${icon('droplet', 'style="color:var(--water)"')}Water</p>
         <div class="table-split">
-          <div class="chart-pane"><div class="chart-container small"><canvas id="miniWater"></canvas></div></div>
+          <div class="chart-pane"><div class="chart-container small"><canvas id="miniWater"></canvas></div><div class="chart-legend" id="miniWaterLegend"></div></div>
           <div class="table-pane"><div class="table-scroll"><table id="tblWater"></table></div></div>
         </div>
       </section>
@@ -403,7 +412,7 @@ function buildDashboard(raw) {
       <section id="telecom" class="card">
         <p class="table-title">${icon('wifi', 'style="color:var(--true-c)"')}Telecom (Internet &amp; Mobile)</p>
         <div class="table-split">
-          <div class="chart-pane"><div class="chart-container small"><canvas id="miniTelecom"></canvas></div></div>
+          <div class="chart-pane"><div class="chart-container small"><canvas id="miniTelecom"></canvas></div><div class="chart-legend" id="miniTelecomLegend"></div></div>
           <div class="table-pane"><div class="table-scroll"><table id="tblTelecom"></table></div></div>
         </div>
       </section>
@@ -533,7 +542,7 @@ function buildDashboard(raw) {
         interaction: { mode: 'index', intersect: false },
         plugins: {
           legend: { display: false },
-          tooltip: { backgroundColor: '#111827', padding: 10, callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.parsed.y) + ' THB' } }
+          tooltip: { backgroundColor: '#111827', padding: 10, boxPadding: 6, callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.parsed.y) + ' THB' } }
         },
         scales: {
           x: { ticks: { font: { size: 10 }, color: '#6B7280', maxRotation: 60, minRotation: 45 }, grid: { display: false } },
@@ -580,7 +589,7 @@ function buildDashboard(raw) {
         responsive: true, maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
-          tooltip: { backgroundColor: '#111827', padding: 10, callbacks: {
+          tooltip: { backgroundColor: '#111827', padding: 10, boxPadding: 6, callbacks: {
             label: ctx => {
               const chart = ctx.chart;
               let monthTotal = 0;
@@ -605,13 +614,14 @@ function buildDashboard(raw) {
         { label: 'Units (kWh)', data: slice.map(r => r.eUnitNum), borderColor: '#92400E', backgroundColor: '#92400E', yAxisID: 'y1', borderWidth: 1.5, borderDash: [4, 3], pointRadius: 2, pointHoverRadius: 4, tension: 0.3 }
       ] },
       options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { position: 'bottom', labels: { boxWidth: 4, boxHeight: 4, pointStyleWidth: 4, usePointStyle: true, pointStyle: 'circle', font: { size: 9 } } }, tooltip: { backgroundColor: '#111827' } },
+        plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111827', boxPadding: 6 } },
         scales: {
           x: { ticks: { font: { size: 9 }, color: '#6B7280', maxRotation: 60, minRotation: 45 }, grid: { display: false } },
           y: { position: 'left', ticks: { font: { size: 9 }, color: '#B45309' }, grid: { color: '#EFEFF1' }, title: { display: true, text: 'THB', font: { size: 9 } } },
           y1: { position: 'right', ticks: { font: { size: 9 }, color: '#92400E' }, grid: { drawOnChartArea: false }, title: { display: true, text: 'kWh', font: { size: 9 } } }
         } }
     });
+    buildLegend('miniElectricityLegend', [{ label: 'Amount (THB)', color: '#F59E0B' }, { label: 'Units (kWh)', color: '#92400E' }]);
 
     if (miniW) miniW.destroy();
     miniW = new Chart(document.getElementById('miniWater'), {
@@ -621,13 +631,14 @@ function buildDashboard(raw) {
         { label: 'Units', data: slice.map(r => r.wUnitNum), borderColor: '#164E63', backgroundColor: '#164E63', yAxisID: 'y1', borderWidth: 1.5, borderDash: [4, 3], pointRadius: 2, pointHoverRadius: 4, tension: 0.3 }
       ] },
       options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { position: 'bottom', labels: { boxWidth: 4, boxHeight: 4, pointStyleWidth: 4, usePointStyle: true, pointStyle: 'circle', font: { size: 9 } } }, tooltip: { backgroundColor: '#111827' } },
+        plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111827', boxPadding: 6 } },
         scales: {
           x: { ticks: { font: { size: 9 }, color: '#6B7280', maxRotation: 60, minRotation: 45 }, grid: { display: false } },
           y: { position: 'left', ticks: { font: { size: 9 }, color: '#0072B2' }, grid: { color: '#EFEFF1' }, title: { display: true, text: 'THB', font: { size: 9 } } },
           y1: { position: 'right', ticks: { font: { size: 9 }, color: '#164E63' }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Units', font: { size: 9 } } }
         } }
     });
+    buildLegend('miniWaterLegend', [{ label: 'Amount (THB)', color: '#0072B2' }, { label: 'Units', color: '#164E63' }]);
 
     if (miniT) miniT.destroy();
     miniT = new Chart(document.getElementById('miniTelecom'), {
@@ -637,9 +648,10 @@ function buildDashboard(raw) {
         { label: 'Mobile', data: slice.map(r => r.mobile), borderColor: '#CC79A7', backgroundColor: '#CC79A7', borderWidth: 1.5, pointRadius: 2, pointHoverRadius: 4, tension: 0.3 }
       ] },
       options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { position: 'bottom', labels: { boxWidth: 4, boxHeight: 4, pointStyleWidth: 4, usePointStyle: true, pointStyle: 'circle', font: { size: 9 } } }, tooltip: { backgroundColor: '#111827' } },
+        plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111827', boxPadding: 6 } },
         scales: { x: { ticks: { font: { size: 9 }, color: '#6B7280', maxRotation: 60, minRotation: 45 }, grid: { display: false } }, y: { ticks: { font: { size: 9 }, color: '#6B7280' }, grid: { color: '#EFEFF1' }, title: { display: true, text: 'THB', font: { size: 9 } } } } }
     });
+    buildLegend('miniTelecomLegend', [{ label: 'Internet', color: '#009E73' }, { label: 'Mobile', color: '#CC79A7' }]);
   }
 
   function linkCell(url) {
@@ -666,7 +678,7 @@ function buildDashboard(raw) {
   const yoyMetricSel = document.getElementById('yoyMetric');
   const yoyFromSel = document.getElementById('yoyFromYear');
   const yoyToSel = document.getElementById('yoyToYear');
-  years.forEach(y => {
+  years.slice().reverse().forEach(y => {
     yoyFromSel.innerHTML += `<option value="${y}">${y}</option>`;
     yoyToSel.innerHTML += `<option value="${y}">${y}</option>`;
   });
@@ -691,12 +703,13 @@ function buildDashboard(raw) {
       options: {
         responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
         plugins: {
-          legend: { position: 'bottom', labels: { boxWidth: 5, boxHeight: 5, pointStyleWidth: 5, usePointStyle: true, pointStyle: 'circle', font: { size: 11 }, color: '#111827' } },
-          tooltip: { backgroundColor: '#111827', padding: 10, callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.parsed.y) + ' THB' } }
+          legend: { display: false },
+          tooltip: { backgroundColor: '#111827', padding: 10, boxPadding: 6, callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.parsed.y) + ' THB' } }
         },
         scales: { x: { ticks: { font: { size: 11 }, color: '#6B7280' }, grid: { display: false } }, y: { ticks: { font: { size: 11 }, color: '#6B7280' }, grid: { color: '#EFEFF1' } } }
       }
     });
+    buildLegend('yoyLegend', selectedYears.map((y, i) => ({ label: y, color: YOY_COLORS[i % YOY_COLORS.length] })));
   }
 
   function renderAll() { renderCharts(); renderTables(); }
